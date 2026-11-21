@@ -296,23 +296,23 @@ func TestClientsSizeTheSession(t *testing.T) {
 
 func TestANarrowerThenWiderSessionKeepsItsText(t *testing.T) {
 	m := newMux(t)
-	s := newSession(t, m, SessionOptions{Cols: 80, Rows: 10})
-	pane := m.ActivePane(s)
 	long := strings.Repeat("0123456789", 6)
-	t.Cleanup(func() {
-		if t.Failed() {
-			t.Logf("the pane shows:\n%s", pane.Capture())
-		}
-	})
-	typeLine(m, s, "echo "+long)
-	shows(t, m, s, "\n"+long)
+	// A program that prints one line and waits: no prompt and no echo share the screen with it.
+	s := newSession(t, m, SessionOptions{Cols: 80, Rows: 10, Spawn: Spawn{
+		Command: []string{"/bin/sh", "-c", "echo " + long + "; echo end; sleep 600"},
+	}})
+	pane := m.ActivePane(s)
+	shows(t, m, s, "end")
+	require.True(t, strings.HasPrefix(pane.Capture(), long+"\nend\n"), pane.Capture())
 
 	m.Attach(s, 1, 25, 10)
 	require.Equal(t, 25, pane.Info().Cols)
-	assert.Contains(t, pane.Capture(), "\n"+long[:25]+"\n"+long[25:50]+"\n"+long[50:], "the line is cut at the new width")
+	assert.True(t, strings.HasPrefix(pane.Capture(), long[:25]+"\n"+long[25:50]+"\n"+long[50:]+"\nend\n"),
+		"the line is cut at the new width:\n%s", pane.Capture())
 
 	m.Attach(s, 1, 80, 10)
-	assert.Contains(t, pane.Capture(), "\n"+long+"\n", "and is whole again on a wider screen")
+	assert.True(t, strings.HasPrefix(pane.Capture(), long+"\nend\n"),
+		"and is whole again on a wider screen:\n%s", pane.Capture())
 }
 
 func TestRefreshFollowsTheRunningProgram(t *testing.T) {
