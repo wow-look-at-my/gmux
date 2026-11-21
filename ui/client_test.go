@@ -20,7 +20,7 @@ func TestTheScreenIsTheWindowAndTwoBars(t *testing.T) {
 	r.shows("hello-42")
 
 	windows, info := r.bars()
-	assert.True(t, strings.HasPrefix(windows, " main  0:sh "), windows)
+	assert.True(t, strings.HasPrefix(windows, " main  1:sh "), windows)
 	assert.True(t, strings.HasSuffix(strings.TrimRight(windows, " "), "+  ┃  ━  □  ×  ?"), windows)
 	assert.Contains(t, info, "100×18")
 	assert.Contains(t, info, "CPU")
@@ -56,8 +56,13 @@ func TestThePrefixRunsCommands(t *testing.T) {
 	assert.NotContains(t, info, "PREFIX")
 	assert.Equal(t, "sh [sh]", r.windows())
 
+	r.keys("ctrl+b", "1")
+	assert.Equal(t, "[sh] sh", r.windows(), "the digits count the windows from one")
+	r.keys("ctrl+b", "2")
+	assert.Equal(t, "sh [sh]", r.windows())
 	r.keys("ctrl+b", "0")
-	assert.Equal(t, "[sh] sh", r.windows())
+	assert.Equal(t, "sh [sh]", r.windows(), "zero is the tenth window, and there is none")
+	r.keys("ctrl+b", "1")
 	r.keys("ctrl+b", "n")
 	assert.Equal(t, "sh [sh]", r.windows())
 	// A key that repeats needs no second prefix.
@@ -93,7 +98,7 @@ func TestThePrefixRunsCommands(t *testing.T) {
 	r.keys("ctrl+b", "z")
 	assert.Len(t, r.mux.View(r.session).Panes, 1)
 	windows, _ := r.bars()
-	assert.Contains(t, windows, "0:sh Z")
+	assert.Contains(t, windows, "1:sh Z")
 	r.keys("ctrl+b", "z", "ctrl+b", "}")
 	r.send(disarmMsg{})
 	assert.NotEqual(t, 0, r.mux.View(r.session).Panes[1].Rect.X+r.mux.View(r.session).Panes[1].Rect.Y)

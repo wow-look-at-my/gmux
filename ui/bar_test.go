@@ -127,7 +127,7 @@ func TestARightClickOnATabOpensItsMenu(t *testing.T) {
 	r.mouse(input.Press, input.ButtonRight, x, y)
 	require.Equal(t, "menu", r.client.overlay())
 	screen := strings.Join(r.lines(), "\n")
-	assert.Contains(t, screen, "window 1")
+	assert.Contains(t, screen, "window 2", "the second tab's window, by the number on its tab")
 	assert.Contains(t, screen, "Move right")
 
 	r.clickOn("menu-2")
@@ -246,7 +246,7 @@ func TestTabsThatDoNotFitStandBehindOneCell(t *testing.T) {
 	windows, _ := r.bars()
 	assert.Contains(t, windows, "3:gamma-window", "the active window always shows")
 	assert.Contains(t, windows, "…")
-	assert.NotContains(t, windows, "0:sh")
+	assert.NotContains(t, windows, "1:sh")
 	assert.LessOrEqual(t, len([]rune(strings.TrimRight(windows, " "))), 60)
 
 	r.clickOn(idMore)
@@ -254,7 +254,7 @@ func TestTabsThatDoNotFitStandBehindOneCell(t *testing.T) {
 	assert.Contains(t, strings.Join(r.lines(), "\n"), "5:epsilon-window")
 	r.clickOn("menu-0")
 	windows, _ = r.bars()
-	assert.Contains(t, windows, "0:sh")
+	assert.Contains(t, windows, "1:sh")
 
 	r.keys("ctrl+b", "w")
 	assert.Equal(t, "menu", r.client.overlay())

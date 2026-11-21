@@ -104,7 +104,7 @@ func (c *Client) overlayProps(props tml.Props) {
 // windowMenu is the actions on one window, opened from its tab.
 func (c *Client) windowMenu(index, x, y int) {
 	n := strconv.Itoa(index)
-	c.openMenu("window "+n, x, y, []menuItem{
+	c.openMenu("window "+strconv.Itoa(windowNumber(index)), x, y, []menuItem{
 		{"Rename…", "rename-window:" + n},
 		{"Move left", "move-window:" + n + ":-1"},
 		{"Move right", "move-window:" + n + ":1"},

@@ -7,8 +7,8 @@ The interface is [tml](https://github.com/wow-look-at-my/tml). The host readings
 ## Use
 
 ```bash
-gmux                      # start a session and attach
-gmux new -s work          # start a session with a name
+gmux                      # start a session and attach: it takes the directory's name
+gmux new -s work          # start a session with a name of your own
 gmux attach -t work       # attach to a session that runs
 gmux ls                   # list the sessions
 gmux kill-session -t work
@@ -19,7 +19,7 @@ gmux kill-server
 
 | Key | Does |
 | --- | --- |
-| `c` `n` `p` `0-9` | new window, next, previous, by number |
+| `c` `n` `p` `1`-`9` | new window, next, previous, by number |
 | `%` `"` | split right, split down |
 | arrows | focus the pane on that side |
 | `z` `x` | zoom the pane, close the pane |

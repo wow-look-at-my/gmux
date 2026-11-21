@@ -68,9 +68,15 @@ func (c *Client) look(id, style string) string {
 	return style
 }
 
+// windowNumber is the number a user knows a window by.
+func windowNumber(index int) int { return index + 1 }
+
+// numberedWindow is the window a digit key names.
+func numberedWindow(digit int) int { return (digit + 9) % 10 }
+
 // tabLabel is what a window's tab says: its number, its name, and a mark for what happened in it.
 func tabLabel(w mux.WindowInfo) string {
-	label := strconv.Itoa(w.Index) + ":" + w.Name
+	label := strconv.Itoa(windowNumber(w.Index)) + ":" + w.Name
 	switch {
 	case w.Bell:
 		label += "!"

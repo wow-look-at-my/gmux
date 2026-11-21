@@ -31,12 +31,22 @@ tests:
 			- "no server is running"
 
 	- desc: a detached session starts the server and shows in the listing
-	  cmd: dats/with-socket.sh 'gmux new-session -d -s work && gmux new -d && gmux ls'
+	  cmd: dats/with-socket.sh 'gmux new-session -d -s work && gmux ls'
 	  exit: 0
 	  outputs:
 		stdout:
 			- "work: 1 windows (created "
-			- "0: 1 windows (created "
+		"!stdout":
+			- "(attached)"
+
+	- desc: a session with no name takes the name of its directory, and a second one a number after it
+	  cmd: dats/with-socket.sh 'mkdir "$work/site" && cd "$work/site" && gmux new -d && gmux new -d && cd / && gmux new -d && gmux ls'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "site: 1 windows (created "
+			- "site-2: 1 windows (created "
+			- "main: 1 windows (created "
 		"!stdout":
 			- "(attached)"
 
@@ -99,7 +109,7 @@ tests:
 	  exit: 0
 	  outputs:
 		stdout:
-			- " demo  0:sh  1:sh "
+			- " demo  1:sh  2:sh "
 			- "MEM "
 
 	- desc: a right click on a tab opens its menu, and a click on a tab shows its window
@@ -128,16 +138,16 @@ tests:
 	  exit: 0
 	  outputs:
 		stdout:
-			- " demo  0:sh  "
+			- " demo  1:sh  "
 		"!stdout":
-			- "1:sh"
+			- "2:sh"
 
 	- desc: a tab dragged over another moves its window there
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene drag_moves_window'
 	  exit: 0
 	  outputs:
 		stdout:
-			- " demo  0:sleep  1:sh "
+			- " demo  1:sleep  2:sh "
 
 	- desc: a right click in the window opens a menu as wide as its longest line
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene pane_menu_fits'

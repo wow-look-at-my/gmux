@@ -6,7 +6,7 @@
 inner_start() {
 	gmux new -d -s outer || return 1
 	gmux send-keys -t outer "GMUX= $work/gmux -S $work/inner.sock new -s demo" Enter || return 1
-	shows outer " demo  0:sh " >/dev/null
+	shows outer " demo  1:sh " >/dev/null
 }
 
 inner_stop() { "$work/gmux" -S "$work/inner.sock" kill-server >/dev/null 2>&1; }
@@ -87,14 +87,14 @@ marked() { gmux send-keys -t outer "echo $1" Enter && shows outer "^$1" >/dev/nu
 add_window() { click 0 "$windows_row" "+" && shows outer " $1:sh " >/dev/null; }
 
 click_adds_window() {
-	add_window 1 && gmux capture-pane -t outer | tail -n 2
+	add_window 2 && gmux capture-pane -t outer | tail -n 2
 }
 
 tab_menu_and_switch() {
-	marked first-window && add_window 1 &&
-		click 2 "$windows_row" "0:sh" && shows outer "Move right" | grep -c "Move right" &&
+	marked first-window && add_window 2 &&
+		click 2 "$windows_row" "1:sh" && shows outer "Move right" | grep -c "Move right" &&
 		gmux send-keys -t outer Escape && gone outer "Move right" &&
-		click 0 "$windows_row" "0:sh" && shows outer "^first-window" | grep -c "^first-window"
+		click 0 "$windows_row" "1:sh" && shows outer "^first-window" | grep -c "^first-window"
 }
 
 # The buttons at the right of the window row: split right, split down, zoom, close the pane, help.
@@ -109,19 +109,19 @@ window_buttons() {
 }
 
 wheel_turns_windows() {
-	marked w-zero && add_window 1 && marked w-one &&
-		wheel up "$windows_row" "0:sh" && shows outer "^w-zero" | grep -c "^w-zero" &&
-		wheel down "$windows_row" "0:sh" && shows outer "^w-one" | grep -c "^w-one"
+	marked w-zero && add_window 2 && marked w-one &&
+		wheel up "$windows_row" "1:sh" && shows outer "^w-zero" | grep -c "^w-zero" &&
+		wheel down "$windows_row" "1:sh" && shows outer "^w-one" | grep -c "^w-one"
 }
 
 middle_click_closes_window() {
-	add_window 1 && click 1 "$windows_row" "1:sh" && gone outer " 1:sh " && row "$windows_row"
+	add_window 2 && click 1 "$windows_row" "2:sh" && gone outer " 2:sh " && row "$windows_row"
 }
 
 # A window takes the name of the program in front, so both tabs can be told apart.
 drag_moves_window() {
-	add_window 1 && gmux send-keys -t outer "sleep 300" Enter && shows outer " 0:sh  1:sleep " >/dev/null &&
-		drag "$windows_row" "1:sleep" "0:sh" && shows outer " 0:sleep  1:sh " | tail -n 2
+	add_window 2 && gmux send-keys -t outer "sleep 300" Enter && shows outer " 1:sh  2:sleep " >/dev/null &&
+		drag "$windows_row" "2:sleep" "1:sh" && shows outer " 1:sleep  2:sh " | tail -n 2
 }
 
 # A right click in the window opens the pane's menu. The menu is as wide as its longest line, not as the window.

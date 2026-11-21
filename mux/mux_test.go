@@ -2,6 +2,7 @@ package mux
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -53,7 +54,7 @@ func TestASessionRunsTheShellOnATerminal(t *testing.T) {
 
 	info, ok := m.Info(s)
 	require.True(t, ok)
-	assert.Equal(t, "0", info.Name)
+	assert.Equal(t, "mux", info.Name, "a session with no name takes the name of its directory, which is this package's")
 	assert.Equal(t, DefaultCols, info.Cols)
 	require.Len(t, info.Windows, 1)
 	assert.True(t, info.Windows[0].Active)
@@ -66,12 +67,17 @@ func TestSessionNamesAndTargets(t *testing.T) {
 	_, err := m.Find("")
 	require.ErrorContains(t, err, "no sessions")
 
-	first := newSession(t, m, SessionOptions{})
-	second := newSession(t, m, SessionOptions{})
+	dir := filepath.Join(t.TempDir(), "notes")
+	require.NoError(t, os.Mkdir(dir, 0o700))
+	first := newSession(t, m, SessionOptions{Spawn: Spawn{Dir: dir}})
+	second := newSession(t, m, SessionOptions{Spawn: Spawn{Dir: dir}})
 	work := newSession(t, m, SessionOptions{Name: "work"})
 	web := newSession(t, m, SessionOptions{Name: "web"})
-	assert.Equal(t, "0", first.Name)
-	assert.Equal(t, "1", second.Name)
+	assert.Equal(t, "notes", first.Name)
+	assert.Equal(t, "notes-2", second.Name, "a name in use gets a number after it")
+	root := newSession(t, m, SessionOptions{Spawn: Spawn{Dir: "/"}})
+	assert.Equal(t, fallbackName, root.Name, "the root directory has no name to give")
+	m.KillSession(root)
 
 	_, err = m.NewSession(SessionOptions{Name: "work"})
 	require.ErrorContains(t, err, "already exists")
@@ -96,7 +102,7 @@ func TestSessionNamesAndTargets(t *testing.T) {
 	for _, info := range m.List() {
 		names = append(names, info.Name)
 	}
-	assert.Equal(t, []string{"0", "1", "work", "site"}, names)
+	assert.Equal(t, []string{"notes", "notes-2", "work", "site"}, names)
 }
 
 func TestWindowsOfASession(t *testing.T) {
@@ -286,6 +292,22 @@ func TestClientsSizeTheSession(t *testing.T) {
 
 	typeLine(m, s, "stty size")
 	shows(t, m, s, "30 100")
+}
+
+func TestANarrowerThenWiderSessionKeepsItsText(t *testing.T) {
+	m := newMux(t)
+	s := newSession(t, m, SessionOptions{Cols: 80, Rows: 10})
+	pane := m.ActivePane(s)
+	long := strings.Repeat("0123456789", 6)
+	typeLine(m, s, "echo "+long)
+	shows(t, m, s, "\n"+long)
+
+	m.Attach(s, 1, 25, 10)
+	require.Equal(t, 25, pane.Info().Cols)
+	assert.Contains(t, pane.Capture(), "\n"+long[:25]+"\n"+long[25:50]+"\n"+long[50:], "the line is cut at the new width")
+
+	m.Attach(s, 1, 80, 10)
+	assert.Contains(t, pane.Capture(), "\n"+long+"\n", "and is whole again on a wider screen")
 }
 
 func TestRefreshFollowsTheRunningProgram(t *testing.T) {

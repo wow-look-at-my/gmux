@@ -118,7 +118,7 @@ func TestCommandsThatNeedNoTerminal(t *testing.T) {
 	lines := strings.Split(strings.TrimSpace(listing), "\n")
 	require.Len(t, lines, 2)
 	assert.Regexp(t, `^work: 1 windows \(created .+\) \[\d+x\d+\]$`, lines[0])
-	assert.True(t, strings.HasPrefix(lines[1], "0: 1 windows"), lines[1])
+	assert.True(t, strings.HasPrefix(lines[1], "cli: 1 windows"), "a session with no name takes its directory's: %s", lines[1])
 
 	h.ok("send-keys", "-t", "work", "echo cli-$((3+4))", "Enter")
 	require.Eventually(t, func() bool {

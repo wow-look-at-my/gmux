@@ -46,7 +46,7 @@ func TestRequestsThatNeedNoTerminal(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, resp.Sessions, 2)
 	assert.Equal(t, SessionLine{Name: "one", Windows: 1, Created: resp.Sessions[0].Created, Cols: 90, Rows: 20}, resp.Sessions[0])
-	assert.Equal(t, "0", resp.Sessions[1].Name)
+	assert.Equal(t, "server", resp.Sessions[1].Name, "the name of the directory the session starts in")
 
 	_, err = Ask(path, Request{Op: OpSendKeys, Target: "one", Keys: []string{"echo sum-$((20+3))", "Enter"}})
 	require.NoError(t, err)
@@ -64,11 +64,11 @@ func TestRequestsThatNeedNoTerminal(t *testing.T) {
 
 	_, err = Ask(path, Request{Op: OpRename, Target: "one", Name: "renamed"})
 	require.NoError(t, err)
-	_, err = Ask(path, Request{Op: OpRename, Target: "renamed", Name: "0"})
+	_, err = Ask(path, Request{Op: OpRename, Target: "renamed", Name: "server"})
 	require.ErrorContains(t, err, "already exists")
 	_, err = Ask(path, Request{Op: OpCapture, Target: "missing"})
 	require.ErrorContains(t, err, "no session named")
-	_, err = Ask(path, Request{Op: "dance", Target: "0"})
+	_, err = Ask(path, Request{Op: "dance", Target: "server"})
 	require.ErrorContains(t, err, "unknown request")
 
 	_, err = Ask(path, Request{Op: OpKillSession, Target: "renamed"})

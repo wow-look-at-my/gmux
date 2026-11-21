@@ -7,6 +7,7 @@ package mux
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"sync"
@@ -136,19 +137,19 @@ func (m *Mux) NewSession(opts SessionOptions) (*Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	dir := opts.Dir
+	if dir == "" {
+		dir, _ = os.Getwd()
+	}
 	name := opts.Name
 	if name == "" {
-		name = m.freeName()
+		name = m.freeName(dir)
 	} else if m.find(name) != nil {
 		return nil, fmt.Errorf("a session named %q already exists", name)
 	}
 	cols, rows := opts.Cols, opts.Rows
 	if cols <= 0 || rows <= 0 {
 		cols, rows = DefaultCols, DefaultRows
-	}
-	dir := opts.Dir
-	if dir == "" {
-		dir, _ = os.Getwd()
 	}
 	m.nextID.session++
 	s := &Session{
@@ -164,14 +165,21 @@ func (m *Mux) NewSession(opts SessionOptions) (*Session, error) {
 	return s, nil
 }
 
-// freeName is the lowest number no session is named. The caller holds the lock.
-func (m *Mux) freeName() string {
-	for n := 0; ; n++ {
-		name := strconv.Itoa(n)
-		if m.find(name) == nil {
-			return name
-		}
+// fallbackName names a session whose directory has no name of its own, such as the root.
+const fallbackName = "main"
+
+// freeName names a session that was given no name, after the directory it starts in. A name in use gets a number
+// after it. The caller holds the lock.
+func (m *Mux) freeName(dir string) string {
+	base := filepath.Base(dir)
+	if base == "." || base == string(filepath.Separator) {
+		base = fallbackName
 	}
+	name := base
+	for n := 2; m.find(name) != nil; n++ {
+		name = base + "-" + strconv.Itoa(n)
+	}
+	return name
 }
 
 // find is the session with the given name. The caller holds the lock.
