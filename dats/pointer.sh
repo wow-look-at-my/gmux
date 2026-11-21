@@ -43,7 +43,7 @@ tab_menu_and_switch() {
 		gmux send-keys -t outer "echo first-window" Enter &&
 		pointer 0 64 && shows outer " 1:sh " >/dev/null &&
 		pointer 2 9 && shows outer "Move right" | grep -c "Move right" &&
-		gmux send-keys -t outer Escape &&
+		gmux send-keys -t outer Escape && gone outer "Move right" &&
 		pointer 0 9 && shows outer "^first-window" | grep -c "^first-window"
 	status=$?
 	inner_stop
