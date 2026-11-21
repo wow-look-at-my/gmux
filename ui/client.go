@@ -65,6 +65,7 @@ type Client struct {
 
 	width, height int
 	outcome       Outcome
+	quitting      bool
 
 	// prefix is set between the prefix key and the key it applies to.
 	prefix      bool
@@ -240,6 +241,14 @@ const noteTime = 2 * time.Second
 
 // quit ends the program with a reason.
 func (c *Client) quit(p *tml.Program, why Outcome) {
+	// The first reason stands: a server that closes because its last session ended says both things.
+	if c.quitting {
+		return
+	}
+	c.quitting = true
+	if _, alive := c.mux.Info(c.session); !alive && why == ServerClosed {
+		why = SessionEnded
+	}
 	c.outcome = why
 	c.mux.Detach(c.session, c.id)
 	if c.stop != nil {

@@ -11,16 +11,16 @@ import (
 
 func snapshot() *client.Snapshot {
 	return &client.Snapshot{Metrics: map[string]client.Metric{
-		client.CPUPercent:                {Value: 12.4, History: []float64{40, 5.25}},
-		client.CPUCount:                  {Value: 16},
-		client.RAMUsed:                   {Value: 3.2 * (1 << 30)},
-		client.RAMTotal:                  {Value: 16 * (1 << 30)},
-		client.RAMSwapUsed:               {Value: 512 * (1 << 20)},
-		client.NetworkRxRate:             {Value: 1234},
-		client.NetworkTxRate:             {Value: 300},
-		client.SystemLoad1m:              {Value: 0.519},
-		client.SystemLoad5m:              {Value: 0.4},
-		client.SystemLoad15m:             {Value: 0.31},
+		client.CPUPercent:                  {Value: 12.4, History: []float64{40, 5.25}},
+		client.CPUCount:                    {Value: 16},
+		client.RAMUsed:                     {Value: 3.2 * (1 << 30)},
+		client.RAMTotal:                    {Value: 16 * (1 << 30)},
+		client.RAMSwapUsed:                 {Value: 512 * (1 << 20)},
+		client.NetworkRxRate:               {Value: 1234},
+		client.NetworkTxRate:               {Value: 300},
+		client.SystemLoad1m:                {Value: 0.519},
+		client.SystemLoad5m:                {Value: 0.4},
+		client.SystemLoad15m:               {Value: 0.31},
 		client.GPUMetric(0, "utilization"): {Value: 87.6},
 		client.GPUMetric(0, "vram"):        {Value: 6 * (1 << 30), RangePossible: &client.Range{0, 24 * (1 << 30)}},
 	}}
@@ -47,10 +47,10 @@ func TestFormatLeavesOutWhatTheHostDoesNotOffer(t *testing.T) {
 	assert.Equal(t, Bar{}, Format(&client.Snapshot{Metrics: map[string]client.Metric{}}, true))
 
 	partial := &client.Snapshot{Metrics: map[string]client.Metric{
-		client.RAMUsed:                   {Value: 1},
-		client.NetworkRxRate:             {Value: 1},
+		client.RAMUsed:                     {Value: 1},
+		client.NetworkRxRate:               {Value: 1},
 		client.GPUMetric(0, "utilization"): {Value: 3},
-		client.SystemLoad1m:              {Value: 2},
+		client.SystemLoad1m:                {Value: 2},
 	}}
 	bar := Format(partial, true)
 	assert.Empty(t, bar.Mem, "used without a total says nothing")
@@ -73,7 +73,8 @@ func TestTheSamplerReadsThisHost(t *testing.T) {
 	var lines []string
 	s := Start(func(format string, args ...any) { lines = append(lines, format) })
 	defer s.Close()
-	require.Eventually(t, func() bool { return s.Read() != nil }, 20*time.Second, 10*time.Millisecond)
+	// The load needs a second sample to measure against the first.
+	require.Eventually(t, func() bool { return s.Bar(false).CPU != "" }, 20*time.Second, 10*time.Millisecond)
 	bar := s.Bar(false)
 	assert.NotEmpty(t, bar.CPUHistory)
 	assert.NotEmpty(t, bar.Mem)

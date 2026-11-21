@@ -22,6 +22,8 @@ type harness struct {
 	socket string
 	srv    *server.Server
 	term   *ttytest.Screen
+	// startErr makes starting the server fail.
+	startErr error
 }
 
 func newHarness(t *testing.T) *harness {
@@ -35,6 +37,9 @@ func newHarness(t *testing.T) *harness {
 	os.Unsetenv(client.NestEnv)
 	os.Setenv("PS1", "$ ")
 	start = func(socket string) error {
+		if h.startErr != nil {
+			return h.startErr
+		}
 		if h.srv != nil {
 			return nil
 		}
@@ -209,7 +214,7 @@ func TestVersionAndUsage(t *testing.T) {
 
 func TestStartingTheServerFailsLoudly(t *testing.T) {
 	h := newHarness(t)
-	start = func(string) error { return assert.AnError }
+	h.startErr = assert.AnError
 	h.fails(assert.AnError.Error(), "new", "-d")
 	h.fails(assert.AnError.Error(), "new")
 }

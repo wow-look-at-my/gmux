@@ -169,8 +169,7 @@ func gpu(snap *client.Snapshot, detail bool) string {
 // units are the binary multiples a byte count is written in.
 var units = []string{"B", "K", "M", "G", "T", "P"}
 
-// Bytes writes a byte count in a few characters: a whole number below units of a size, one decimal otherwise
-// only where it fits.
+// Bytes writes a byte count in a few characters: with a decimal while a single digit leads, and whole past that.
 func Bytes(v float64) string {
 	if v < 0 {
 		v = 0
