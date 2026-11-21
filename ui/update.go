@@ -39,7 +39,7 @@ func (c *Client) Update(p *tml.Program, msg tml.Msg) bool {
 	case disarmMsg:
 		c.disarm()
 	case closeMsg:
-		c.quit(p, ServerClosed)
+		c.quit(p, msg.why)
 	}
 	return false
 }

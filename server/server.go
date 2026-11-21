@@ -161,17 +161,20 @@ func (s *Server) closeIfEmpty() {
 	had := s.hadWork
 	s.mu.Unlock()
 	if had && s.mux.Empty() {
-		s.Close()
+		s.shutdown(ui.SessionEnded)
 	}
 }
 
 // Close ends every session, detaches every client and stops listening.
-func (s *Server) Close() {
+func (s *Server) Close() { s.shutdown(ui.ServerClosed) }
+
+// shutdown closes the server, and tells each client why its program ends.
+func (s *Server) shutdown(why ui.Outcome) {
 	s.closeOnce.Do(func() {
 		close(s.done)
 		s.mu.Lock()
 		for _, a := range s.attached {
-			a.client.Close(a.program)
+			a.client.Close(a.program, why)
 		}
 		s.mu.Unlock()
 		s.mux.Close()

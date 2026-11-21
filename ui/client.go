@@ -130,8 +130,8 @@ type (
 	clipboardMsg struct{ text string }
 	// disarmMsg ends the time a repeatable key may follow the prefix without it.
 	disarmMsg struct{}
-	// closeMsg is the server shutting down.
-	closeMsg struct{}
+	// closeMsg is the server ending the client, and why.
+	closeMsg struct{ why Outcome }
 )
 
 // Start ties the client to its program: the session's events reach the program from here on. The function it
@@ -164,8 +164,8 @@ func (c *Client) Start(p *tml.Program) (stop func()) {
 // Wake asks the program for a frame, which is also when it reads its terminal's size again.
 func (c *Client) Wake(p *tml.Program) { p.Send(frameMsg{}) }
 
-// Close tells the program the server is shutting down. It is safe from any goroutine.
-func (c *Client) Close(p *tml.Program) { p.Send(closeMsg{}) }
+// Close ends the program from outside it, with the reason to report. It is safe from any goroutine.
+func (c *Client) Close(p *tml.Program, why Outcome) { p.Send(closeMsg{why: why}) }
 
 // shown is the session on screen, read from a goroutine that is not the program's.
 func (c *Client) shown() *mux.Session {
@@ -246,9 +246,6 @@ func (c *Client) quit(p *tml.Program, why Outcome) {
 		return
 	}
 	c.quitting = true
-	if _, alive := c.mux.Info(c.session); !alive && why == ServerClosed {
-		why = SessionEnded
-	}
 	c.outcome = why
 	c.mux.Detach(c.session, c.id)
 	if c.stop != nil {

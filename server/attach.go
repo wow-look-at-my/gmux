@@ -64,7 +64,7 @@ func (s *Server) attach(conn *net.UnixConn, reader *Reader, req Request, files [
 		for {
 			var msg Request
 			if err := reader.Read(&msg); err != nil {
-				client.Close(program)
+				client.Close(program, ui.Detached)
 				return
 			}
 			client.Wake(program)

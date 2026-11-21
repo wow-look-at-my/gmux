@@ -146,7 +146,11 @@ func TestTheClientLeavesWhenItsLastSessionEnds(t *testing.T) {
 
 func TestTheServerClosingEndsTheClient(t *testing.T) {
 	r := newRig(t, 80, 12)
-	r.send(closeMsg{})
+	r.client.Close(r.program, ServerClosed)
+	r.send(closeMsg{why: ServerClosed})
+	assert.Equal(t, ServerClosed, r.client.Outcome())
+	// The first reason stands.
+	r.send(closeMsg{why: SessionEnded})
 	assert.Equal(t, ServerClosed, r.client.Outcome())
 }
 

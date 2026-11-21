@@ -28,7 +28,7 @@ type harness struct {
 
 func newHarness(t *testing.T) *harness {
 	t.Helper()
-	t.Serial()
+	t.Serial("the command line keeps its flags and its seams in package variables")
 	dir, err := os.MkdirTemp("", "gmux")
 	require.NoError(t, err)
 	h := &harness{t: t, socket: filepath.Join(dir, "s.sock"), term: ttytest.Open(t, 100, 24)}
@@ -154,7 +154,10 @@ func TestAttachingCommands(t *testing.T) {
 
 	done = h.background("attach", "-t", "live")
 	h.term.Shows(" live ")
-	assert.Contains(t, h.ok("ls"), "(attached)")
+	// The command line is one at a time, so the listing is asked of the server directly while the attach runs.
+	resp, err := server.Ask(h.socket, server.Request{Op: server.OpList})
+	require.NoError(t, err)
+	assert.Equal(t, 1, resp.Sessions[0].Attached)
 	h.term.Send("\x02d")
 	assert.Contains(t, h.await(done), "detached")
 
