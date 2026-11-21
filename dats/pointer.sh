@@ -130,6 +130,14 @@ pane_menu_fits() {
 		grep -e "╭ pane " -e "Even out panes" | sed 's/^ *//; s/ *$//'
 }
 
+# A pane shows a scrollbar once it has history to scroll back to. The thumb is the only full block on screen.
+scrollbar_shows() {
+	echo "before $(gmux capture-pane -t outer | grep -c "█")"
+	gmux send-keys -t outer "seq 1 60" Enter && shows outer "^60" >/dev/null || return 1
+	after=$(gmux capture-pane -t outer | grep -c "│ *█\|█$")
+	[ "$after" -gt 0 ] && echo "after: a thumb at the right edge"
+}
+
 # The information row: the clock shows the date, and the directory copies itself.
 info_row_clicks() {
 	clock=$(row "$info_row" | grep -o '[0-9][0-9]:[0-9][0-9]' | tail -n 1) &&

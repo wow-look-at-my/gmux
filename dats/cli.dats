@@ -156,6 +156,13 @@ tests:
 		stdout:
 			- "╭ pane ──────────╮\n│ Even out panes │"
 
+	- desc: a pane with history to scroll back to shows a scrollbar
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene scrollbar_shows'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "before 0\nafter: a thumb at the right edge"
+
 	- desc: a click on the clock shows the date, and a click on the directory copies it
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene info_row_clicks'
 	  exit: 0
