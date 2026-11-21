@@ -154,7 +154,7 @@
 				</Stack>
 			</Popup>
 
-			<Popup id="help" title="gmux keys" style="menu" width="64" if="{helpOpen}">
+			<Popup id="help-box" title="gmux keys" style="menu" width="64" if="{helpOpen}">
 				<Stack>
 					<Stack itemsSource="{help}" itemTemplate="HelpLine"/>
 					<Text style="dim">any key closes this</Text>

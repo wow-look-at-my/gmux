@@ -91,7 +91,7 @@ func (c *Client) mouse(p *tml.Program, event tml.Mouse) bool {
 // overlayMouse leaves a menu or a prompt its own clicks, and closes it on a press anywhere else.
 func (c *Client) overlayMouse(event tml.Mouse) bool {
 	over := c.hit(event.X, event.Y)
-	inside := strings.HasPrefix(over, menuPrefix) || over == "menu" || strings.HasPrefix(over, "prompt") || over == "help"
+	inside := strings.HasPrefix(over, menuPrefix) || over == "menu" || strings.HasPrefix(over, "prompt") || over == "help-box"
 	if c.menu != nil {
 		c.hover = over
 		if strings.HasPrefix(over, menuPrefix) {

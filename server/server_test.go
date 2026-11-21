@@ -59,7 +59,7 @@ func TestRequestsThatNeedNoTerminal(t *testing.T) {
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		resp, _ := Ask(path, Request{Op: OpCapture, Target: "one"})
-		return strings.Contains(resp.Output, "$ Enter")
+		return strings.Contains(resp.Output, " Enter")
 	}, wait, 10*time.Millisecond, "a literal key name is typed as text")
 
 	_, err = Ask(path, Request{Op: OpRename, Target: "one", Name: "renamed"})

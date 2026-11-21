@@ -37,7 +37,7 @@ func (c *Client) Update(p *tml.Program, msg tml.Msg) bool {
 		c.clip = msg.text
 		p.Copy(msg.text)
 	case disarmMsg:
-		c.prefix = false
+		c.disarm()
 	case closeMsg:
 		c.quit(p, ServerClosed)
 	}

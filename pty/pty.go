@@ -78,7 +78,7 @@ func Open(cols, rows int) (master, slave *os.File, err error) {
 	}
 	name, err := unlock(master)
 	if err == nil {
-		err = setSize(master, cols, rows)
+		err = SetSize(master, cols, rows)
 	}
 	if err != nil {
 		master.Close()
@@ -92,8 +92,8 @@ func Open(cols, rows int) (master, slave *os.File, err error) {
 	return master, slave, nil
 }
 
-// setSize tells a terminal its size through its controlling end.
-func setSize(master *os.File, cols, rows int) error {
+// SetSize tells a terminal its size through its controlling end.
+func SetSize(master *os.File, cols, rows int) error {
 	ws := &unix.Winsize{Col: uint16(max(1, cols)), Row: uint16(max(1, rows))}
 	err := control(master, func(fd int) error { return unix.IoctlSetWinsize(fd, unix.TIOCSWINSZ, ws) })
 	if err != nil {
@@ -160,7 +160,7 @@ func (p *Pty) Read(b []byte) (int, error) {
 func (p *Pty) Write(b []byte) (int, error) { return p.master.Write(b) }
 
 // Resize tells the terminal its size, and the kernel tells the child.
-func (p *Pty) Resize(cols, rows int) error { return setSize(p.master, cols, rows) }
+func (p *Pty) Resize(cols, rows int) error { return SetSize(p.master, cols, rows) }
 
 // Pid is the child's process id.
 func (p *Pty) Pid() int { return p.cmd.Process.Pid }
