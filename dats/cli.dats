@@ -139,6 +139,13 @@ tests:
 		stdout:
 			- " demo  0:sleep  1:sh "
 
+	- desc: a right click in the window opens a menu as wide as its longest line
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene pane_menu_fits'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "╭ pane ──────────╮\n│ Even out panes │"
+
 	- desc: a click on the clock shows the date, and a click on the directory copies it
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene info_row_clicks'
 	  exit: 0

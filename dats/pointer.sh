@@ -124,6 +124,12 @@ drag_moves_window() {
 		drag "$windows_row" "1:sleep" "0:sh" && shows outer " 0:sleep  1:sh " | tail -n 2
 }
 
+# A right click in the window opens the pane's menu. The menu is as wide as its longest line, not as the window.
+pane_menu_fits() {
+	report 2 30 6 M && report 2 30 6 m && shows outer "Split right" |
+		grep -e "╭ pane " -e "Even out panes" | sed 's/^ *//; s/ *$//'
+}
+
 # The information row: the clock shows the date, and the directory copies itself.
 info_row_clicks() {
 	clock=$(row "$info_row" | grep -o '[0-9][0-9]:[0-9][0-9]' | tail -n 1) &&
