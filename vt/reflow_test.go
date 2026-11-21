@@ -85,9 +85,9 @@ func TestReflowKeepsTheCursorOnItsCellInsideALine(t *testing.T) {
 
 	// The cursor row stays on screen. Text below it that no longer fits is lost from the bottom.
 	s.Resize(2, 3)
-	assert.Equal(t, "01\n2#\n45\n67", all(s))
-	assert.Equal(t, Cursor{X: 1, Y: 0, Visible: true}, s.Cursor())
-	assert.Equal(t, []string{"01"}, historyText(s))
+	assert.Equal(t, "01\n2#\n45\n67\n89", all(s))
+	assert.Equal(t, Cursor{X: 0, Y: 0, Visible: true}, s.Cursor(), "the cursor waited after the #, and is now on the 4")
+	assert.Equal(t, []string{"01", "2#"}, historyText(s))
 }
 
 func TestReflowRespectsTheScrollbackLimit(t *testing.T) {
