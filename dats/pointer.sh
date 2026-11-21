@@ -130,6 +130,17 @@ pane_menu_fits() {
 		grep -e "╭ pane " -e "Even out panes" | sed 's/^ *//; s/ *$//'
 }
 
+# A pane that gets narrower cuts its long lines, and a pane that gets wider joins them again. The split button
+# halves the pane, and the close button on the new pane gives the room back.
+reflow_on_resize() {
+	head=01234567890123456789012345678901234567
+	tail=8901234567890123456789
+	gmux send-keys -t outer "echo $head$tail" Enter && shows outer "^$head$tail\$" >/dev/null || return 1
+	click 0 "$windows_row" "┃" && shows outer "^$tail " >/dev/null || return 1
+	echo "cut: $(gmux capture-pane -t outer | grep -c "^$head[^0-9]") then $(gmux capture-pane -t outer | grep -c "^$tail ")"
+	click 0 "$windows_row" "×" && shows outer "^$head$tail\$" | grep -c "^$head$tail\$" | sed 's/^/whole: /'
+}
+
 # A pane shows a scrollbar once it has history to scroll back to. The thumb is the only full block on screen.
 scrollbar_shows() {
 	echo "before $(gmux capture-pane -t outer | grep -c "█")"

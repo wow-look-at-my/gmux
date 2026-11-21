@@ -156,6 +156,13 @@ tests:
 		stdout:
 			- "╭ pane ──────────╮\n│ Even out panes │"
 
+	- desc: a narrower pane cuts a long line, and a wider one joins it again
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene reflow_on_resize'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "cut: 1 then 1\nwhole: 1"
+
 	- desc: a pane with history to scroll back to shows a scrollbar
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene scrollbar_shows'
 	  exit: 0
