@@ -61,7 +61,7 @@ func Start(socket, exe string) error {
 			return fmt.Errorf("the server did not start (%v); see %s.log", err, socket)
 		case <-deadline:
 			return fmt.Errorf("the server did not answer within %s; see %s.log", startWait, socket)
-		case <-time.After(10 * time.Millisecond):
+		case <-time.After(time.Millisecond):
 		}
 	}
 }
