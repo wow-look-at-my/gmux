@@ -48,7 +48,9 @@ gmux capture-pane -t build
 
 ## Platforms
 
-The binary is one portable executable for Linux and macOS. It is tested on Linux. The macOS side has not been run, and the host readings need `/proc`, so the bars leave them out there.
+The binary is one portable executable. It is tested on Linux. The macOS side has not been run, and the host readings need `/proc`, so the bars leave them out there. Windows has no pseudo-terminals: the binary starts there and reports that it cannot open one.
+
+`GMUX_THEME=light` draws the bars for a terminal with a light background.
 
 ## Build
 

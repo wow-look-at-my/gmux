@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
-      # The platforms are the hosts that have pseudo-terminals. Windows has none, so the binary does not claim it.
+      # gmux needs pseudo-terminals, which Windows does not have. The Windows payload stays in the set because the release build cannot read the build info of an executable built without it.
       - uses: wow-look-at-my/go-toolchain@lkgb
         with:
-          cosmo-platforms: linux/amd64,linux/arm64,darwin/arm64
+          cosmo-platforms: linux/amd64,linux/arm64,darwin/arm64,windows/amd64
