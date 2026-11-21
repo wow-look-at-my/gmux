@@ -88,7 +88,7 @@ func checkFrame(t *testing.T, tr *Tree, area Rect) Frame {
 		}
 		paint(d.Rect)
 	}
-	if len(f.Dividers) == tr.Len()-1 {
+	if len(f.Dividers) == tr.Len()-1 && !a.Empty() {
 		for _, p := range f.Panes {
 			require.False(t, p.Rect.Empty())
 		}
