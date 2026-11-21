@@ -61,6 +61,11 @@ func (s *Screen) Write(p []byte) (int, error) {
 			i++
 			continue
 		}
+		if b == 0x1b && s.state == stGround && s.u8need == 0 && i+1 < len(p) && p[i+1] == '[' {
+			s.enterCSI()
+			i += 2
+			continue
+		}
 		if (s.state == stCSIParam || s.state == stCSIEntry) && b >= '0' && b <= ';' {
 			i = s.csiParams(p, i)
 			continue
@@ -121,6 +126,11 @@ func (s *Screen) step(b byte) {
 			s.state = stGround
 		}
 	}
+}
+
+func (s *Screen) enterCSI() {
+	s.state, s.nparams, s.priv = stCSIEntry, 0, 0
+	s.ninter, s.interBad = 0, false
 }
 
 func (s *Screen) enterEscape() {
@@ -216,8 +226,7 @@ func (s *Screen) escape(b byte) {
 	s.state = stGround
 	switch b {
 	case '[':
-		s.state, s.nparams, s.priv = stCSIEntry, 0, 0
-		s.ninter, s.interBad = 0, false
+		s.enterCSI()
 	case ']':
 		s.state, s.osc, s.oscBad = stOSC, s.osc[:0], false
 	case 'P', 'X', '^', '_':

@@ -137,10 +137,14 @@ func clearGrid(g *grid, st Style) {
 }
 
 // fillBlank sets every cell of row to a blank with the background of st.
+// It doubles the filled prefix with copy, which is faster than a store per cell.
 func fillBlank(row []Cell, st Style) {
-	b := Cell{Width: 1, Style: Style{Bg: st.Bg}}
-	for i := range row {
-		row[i] = b
+	if len(row) == 0 {
+		return
+	}
+	row[0] = Cell{Width: 1, Style: Style{Bg: st.Bg}}
+	for i := 1; i < len(row); i *= 2 {
+		copy(row[i:], row[:i])
 	}
 }
 
