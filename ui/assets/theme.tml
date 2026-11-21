@@ -1,0 +1,35 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Theme xmlns="urn:tml:v1" name="gmux">
+	<Token name="bar" light="#e6e9ef" dark="#1f2335"/>
+	<Token name="barText" light="#4c4f69" dark="#a9b1d6"/>
+	<Token name="dim" light="#8c8fa1" dark="#565f89"/>
+	<Token name="accent" light="#1e66f5" dark="#7aa2f7"/>
+	<Token name="accentText" light="#eff1f5" dark="#15161e"/>
+	<Token name="hover" light="#ccd0da" dark="#3b4261"/>
+	<Token name="alert" light="#d20f39" dark="#f7768e"/>
+	<Token name="good" light="#40a02b" dark="#9ece6a"/>
+	<Token name="warm" light="#df8e1d" dark="#e0af68"/>
+	<Token name="menu" light="#dce0e8" dark="#292e42"/>
+
+	<Style name="bar" bg="{theme.bar}" fg="{theme.barText}"/>
+	<Style name="dim" fg="{theme.dim}"/>
+
+	<Style name="tab" padding="0 1"/>
+	<Style name="tab.hover" extends="tab" bg="{theme.hover}"/>
+	<Style name="tab.active" extends="tab" bg="{theme.accent}" fg="{theme.accentText}" bold="true"/>
+	<Style name="tab.alert" extends="tab" fg="{theme.alert}" bold="true"/>
+	<Style name="tab.busy" extends="tab" fg="{theme.warm}"/>
+	<Style name="tab.drag" extends="tab" bg="{theme.warm}" fg="{theme.accentText}" bold="true"/>
+
+	<Style name="chip" padding="0 1"/>
+	<Style name="chip.hover" extends="chip" bg="{theme.hover}"/>
+	<Style name="chip.session" extends="chip" bg="{theme.good}" fg="{theme.accentText}" bold="true"/>
+	<Style name="chip.mode" extends="chip" bg="{theme.warm}" fg="{theme.accentText}" bold="true"/>
+	<Style name="chip.note" extends="chip" fg="{theme.good}"/>
+
+	<Style name="menu" bg="{theme.menu}" fg="{theme.barText}"/>
+	<Style name="menu.item" padding="0 1"/>
+	<Style name="menu.item.hover" extends="menu.item" bg="{theme.accent}" fg="{theme.accentText}"/>
+	<Style name="menu.title" padding="0 1" fg="{theme.dim}"/>
+	<Style name="key" fg="{theme.accent}" bold="true"/>
+</Theme>
