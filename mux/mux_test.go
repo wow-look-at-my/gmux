@@ -328,9 +328,11 @@ func TestAProgramSetsTheClipboardAndTheTitle(t *testing.T) {
 
 func TestKeysPasteAndThePointerReachTheProgram(t *testing.T) {
 	m := newMux(t)
-	script := `printf '\033[?1000h\033[?1006h\033[?2004h'; stty -echo; cat -v`
+	script := `printf '\033[?1000h\033[?1006h\033[?2004h'; stty -echo; echo reader-is-up; cat -v`
 	s := newSession(t, m, SessionOptions{Spawn: Spawn{Command: []string{"/bin/sh", "-c", script}}})
 	pane := m.ActivePane(s)
+	// Input sent before the program turned the echo off is drawn by the terminal as well.
+	shows(t, m, s, "reader-is-up")
 	require.Eventually(t, func() bool { return pane.Modes().BracketedPaste }, wait, 5*time.Millisecond)
 
 	pane.Key(input.ParseKey("up"))

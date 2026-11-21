@@ -111,7 +111,7 @@ func TestThePrefixRunsCommands(t *testing.T) {
 
 func TestThePrefixTwiceSendsItToTheProgram(t *testing.T) {
 	r := newRig(t, 80, 12)
-	r.typeLine("stty -echo; cat -v")
+	r.reader("")
 	r.keys("ctrl+b", "ctrl+b", "enter")
 	r.shows("^B")
 }
@@ -191,7 +191,7 @@ func TestScrollingBackThroughHistory(t *testing.T) {
 
 func TestTheWheelInAFullScreenProgramSendsArrows(t *testing.T) {
 	r := newRig(t, 60, 12)
-	r.typeLine(`printf '\033[?1049h'; stty -echo; cat -v`)
+	r.reader(`printf '\033[?1049h'; `)
 	r.eventually(func() bool { return r.mux.ActivePane(r.session).Modes().AltScreen }, "never full screen")
 	r.mouse(input.Wheel, input.WheelUp, 5, 5)
 	r.mouse(input.Wheel, input.WheelDown, 5, 5)
@@ -202,7 +202,7 @@ func TestTheWheelInAFullScreenProgramSendsArrows(t *testing.T) {
 
 func TestAProgramThatAsksGetsThePointer(t *testing.T) {
 	r := newRig(t, 60, 12)
-	r.typeLine(`printf '\033[?1002h\033[?1006h'; stty -echo; cat -v`)
+	r.reader(`printf '\033[?1002h\033[?1006h'; `)
 	r.eventually(func() bool { return r.mux.ActivePane(r.session).Modes().MouseSGR }, "never asked")
 	r.mouse(input.Press, input.ButtonLeft, 3, 4)
 	r.mouse(input.Motion, input.ButtonLeft, 5, 4)
@@ -248,7 +248,7 @@ func TestSelectingTextCopiesIt(t *testing.T) {
 	assert.Equal(t, "alpha beta gamma", r.client.clip)
 
 	// The middle button pastes what was copied.
-	r.typeLine("stty -echo; cat -v")
+	r.reader("")
 	r.click(input.ButtonMiddle, 3, 3)
 	r.keys("enter")
 	r.shows("\nalpha beta gamma")

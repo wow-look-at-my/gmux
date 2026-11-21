@@ -133,7 +133,15 @@ func (r *rig) shows(text string) {
 	r.t.Helper()
 	require.Eventually(r.t, func() bool {
 		return strings.Contains(strings.Join(r.lines()[:r.height-2], "\n"), text)
-	}, wait, 5*time.Millisecond, "the window never showed %q", text)
+	}, wait, 5*time.Millisecond, "the window never showed %q; it shows:\n%s", text, strings.Join(r.lines(), "\n"))
+}
+
+// reader starts a program that prints back what it is sent, after an optional
+// setup command, and waits until it reads.
+func (r *rig) reader(setup string) {
+	r.t.Helper()
+	r.typeLine(setup + `stty -echo; echo reader-is-"up"; cat -v`)
+	r.shows("reader-is-up")
 }
 
 func (r *rig) typeLine(line string) {
