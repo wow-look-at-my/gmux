@@ -25,6 +25,7 @@
 	<Property name="menuTitle" type="string" default=""/>
 	<Property name="menuX" type="int" default="0"/>
 	<Property name="menuY" type="int" default="0"/>
+	<Property name="menuWidth" type="int" default="0"/>
 	<Property name="menu" type="record[]" default=""/>
 
 	<Property name="promptOpen" type="bool" default="false"/>
@@ -143,7 +144,7 @@
 			</Grid>
 
 			<Border id="menu" kind="rounded" title="{menuTitle}" style="menu" pad="0" if="{menuOpen}"
-				Canvas.x="{menuX}" Canvas.y="{menuY}">
+				Canvas.x="{menuX}" Canvas.y="{menuY}" width="{menuWidth}">
 				<Stack itemsSource="{menu}" itemTemplate="MenuItem"/>
 			</Border>
 

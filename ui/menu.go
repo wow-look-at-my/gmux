@@ -15,25 +15,30 @@ type menuItem struct{ label, action string }
 
 // menu is a list of actions opened at a cell of the screen.
 type menu struct {
-	title string
-	x, y  int
-	items []menuItem
+	title       string
+	x, y, width int
+	items       []menuItem
 	// hover is the item the keys or the pointer are on, or negative.
 	hover int
 }
 
 const menuPrefix = "menu-"
 
-// openMenu shows a menu near a cell, moved so that all of it is on screen.
+// menuCap is the widest a menu gets. A longer label is cut.
+const menuCap = 40
+
+// openMenu shows a menu near a cell, moved so that all of it is on screen. The menu is as wide as its longest
+// line, up to the cap and the screen. Its rows fill it, so a menu with no width of its own takes the whole screen.
 func (c *Client) openMenu(title string, x, y int, items []menuItem) {
 	width := cell.Width(title) + 4
 	for _, item := range items {
 		width = max(width, cell.Width(item.label)+4)
 	}
+	width = min(width, menuCap, max(c.width, 1))
 	height := len(items) + 2
 	x = max(0, min(x, c.width-width))
 	y = max(0, min(y, c.height-height))
-	c.menu = &menu{title: title, x: x, y: y, items: items, hover: -1}
+	c.menu = &menu{title: title, x: x, y: y, width: width, items: items, hover: -1}
 	c.ask, c.help = nil, false
 }
 
@@ -71,6 +76,7 @@ func (c *Client) overlayProps(props tml.Props) {
 		props["menuTitle"] = sema.StringValue(m.title)
 		props["menuX"] = sema.StringValue(strconv.Itoa(m.x))
 		props["menuY"] = sema.StringValue(strconv.Itoa(m.y))
+		props["menuWidth"] = sema.StringValue(strconv.Itoa(m.width))
 		props["menu"] = records(items)
 	}
 	if a := c.ask; a != nil {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wow-look-at-my/go-tmux/layout"
 	"github.com/wow-look-at-my/go-tmux/mux"
 	"github.com/wow-look-at-my/tml"
 	"github.com/wow-look-at-my/tml/input"
@@ -180,6 +181,36 @@ func TestARightClickInAPaneOpensThePaneMenu(t *testing.T) {
 	require.True(t, ok)
 	assert.LessOrEqual(t, target.Rect.X+target.Rect.W, 100)
 	assert.LessOrEqual(t, target.Rect.Y+target.Rect.H, 20)
+}
+
+// menuRect opens a menu at a cell and reports where it was drawn.
+func (r *rig) menuRect(title string, x, y int, items ...menuItem) layout.Rect {
+	r.t.Helper()
+	r.client.openMenu(title, x, y, items)
+	r.frame()
+	target, ok := r.client.View().UI().Target("menu")
+	require.True(r.t, ok, "no menu on screen")
+	return layout.Rect{X: target.Rect.X, Y: target.Rect.Y, W: target.Rect.W, H: target.Rect.H}
+}
+
+func TestAMenuIsAsWideAsItsLongestLine(t *testing.T) {
+	r := newRig(t, 100, 20)
+	short, long := menuItem{label: "Zoom", action: "zoom"}, menuItem{label: "Even out panes", action: "equalize"}
+
+	rect := r.menuRect("pane", 10, 4, short, long)
+	assert.Equal(t, len("Even out panes")+4, rect.W, "the longest label, its padding and the border")
+	assert.Equal(t, 10, rect.X, "a menu that fits stays where it was opened")
+	assert.Contains(t, r.lines()[5], " Zoom ", "the menu still draws its items")
+
+	rect = r.menuRect("a title longer than the item", 10, 4, short)
+	assert.Equal(t, len("a title longer than the item")+4, rect.W, "a longer title sets the width")
+
+	rect = r.menuRect("pane", 10, 4, menuItem{label: strings.Repeat("w", 90), action: "zoom"})
+	assert.Equal(t, menuCap, rect.W, "a label longer than the cap is cut")
+
+	narrow := newRig(t, 30, 12)
+	rect = narrow.menuRect("pane", 5, 2, menuItem{label: strings.Repeat("w", 90), action: "zoom"})
+	assert.Equal(t, layout.Rect{X: 0, Y: 2, W: 30, H: 3}, rect, "a screen narrower than the cap is the limit")
 }
 
 func TestTheSessionChipListsTheSessions(t *testing.T) {
