@@ -129,14 +129,17 @@ func (s *Screen) put(r rune, w int) {
 	}
 }
 
-// splitWide blanks the other half of a wide glyph that has a half at x.
+// splitWide blanks both halves of a wide glyph that has a half at x.
 func (s *Screen) splitWide(row []Cell, x int) {
 	switch {
 	case row[x].Width == 0 && x > 0:
 		row[x-1] = Cell{Width: 1, Style: Style{Bg: row[x-1].Style.Bg}}
 	case row[x].Width == 2 && x+1 < len(row):
 		row[x+1] = Cell{Width: 1, Style: Style{Bg: row[x+1].Style.Bg}}
+	default:
+		return
 	}
+	row[x] = Cell{Width: 1, Style: Style{Bg: row[x].Style.Bg}}
 }
 
 // prevCell returns the column of the glyph the last printed character went into.

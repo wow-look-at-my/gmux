@@ -50,12 +50,14 @@ func (s *Screen) resizePrimary(rows int, cy *int) {
 			g.wrapped = g.wrapped[:len(g.wrapped)-1]
 			remove--
 		}
-		for i := range remove {
+		// Lines leave from the top only until the cursor row fits; the rest leave from the bottom.
+		up := min(remove, max(*cy-(rows-1), 0))
+		for i := range up {
 			s.hist.push(g.rows[i], g.wrapped[i])
 		}
-		g.rows = append([][]Cell(nil), g.rows[remove:]...)
-		g.wrapped = append([]bool(nil), g.wrapped[remove:]...)
-		*cy -= remove
+		g.rows = append([][]Cell(nil), g.rows[up:up+rows]...)
+		g.wrapped = append([]bool(nil), g.wrapped[up:up+rows]...)
+		*cy -= up
 	case rows > old:
 		add := rows - old
 		pull := min(add, s.hist.n)
