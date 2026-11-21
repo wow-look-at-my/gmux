@@ -118,13 +118,13 @@ func (s *Server) Serve() error {
 	go s.tick()
 	for {
 		conn, err := s.ln.AcceptUnix()
+		if errors.Is(err, net.ErrClosed) {
+			// The sessions end after the listener closes. The process must not leave before them.
+			<-s.done
+			return nil
+		}
 		if err != nil {
-			select {
-			case <-s.done:
-				return nil
-			default:
-				return err
-			}
+			return err
 		}
 		go s.handle(conn)
 	}
@@ -171,7 +171,11 @@ func (s *Server) Close() { s.shutdown(ui.ServerClosed) }
 // shutdown closes the server, and tells each client why its program ends.
 func (s *Server) shutdown(why ui.Outcome) {
 	s.closeOnce.Do(func() {
-		close(s.done)
+		// The listener closes first and the signal comes last. A server that says it closed answers nobody.
+		if s.ln != nil {
+			s.ln.Close()
+		}
+		defer close(s.done)
 		s.mu.Lock()
 		for _, a := range s.attached {
 			a.client.Close(a.program, why)
@@ -180,9 +184,6 @@ func (s *Server) shutdown(why ui.Outcome) {
 		s.mux.Close()
 		if s.stats != nil {
 			s.stats.Close()
-		}
-		if s.ln != nil {
-			s.ln.Close()
 		}
 	})
 }
