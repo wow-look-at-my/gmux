@@ -97,7 +97,23 @@ func (c *Client) key(p *tml.Program, key tml.Key) bool {
 	if pane.Info().Offset > 0 && c.scrollKey(pane, name) {
 		return true
 	}
+	if c.pageKey(pane, name) {
+		return true
+	}
 	pane.Key(key)
+	return true
+}
+
+// pageKey keeps the page keys of a pane that shows its live screen. They move
+// through the history, so page down has nothing to do there, and a shell that
+// got it would print a tilde.
+func (c *Client) pageKey(pane *mux.Pane, name string) bool {
+	if name != "pgup" && name != "pgdown" || pane.Modes().AltScreen {
+		return false
+	}
+	if name == "pgup" {
+		pane.Scroll(max(1, pane.Info().Rows-1))
+	}
 	return true
 }
 

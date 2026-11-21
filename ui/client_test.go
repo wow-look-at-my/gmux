@@ -189,6 +189,33 @@ func TestScrollingBackThroughHistory(t *testing.T) {
 	assert.Zero(t, pane.Info().Offset)
 }
 
+func TestThePageKeysOnTheLiveScreenMoveThroughTheHistory(t *testing.T) {
+	r := newRig(t, 60, 12)
+	r.typeLine("i=0; while [ $i -lt 60 ]; do echo line-$i; i=$((i+1)); done")
+	r.shows("line-59")
+	r.reader("")
+	pane := r.mux.ActivePane(r.session)
+
+	// Page down has nowhere to go, and the program must not get it: a shell prints a tilde for it.
+	r.keys("pgdown")
+	assert.Zero(t, pane.Info().Offset)
+	r.keys("pgup")
+	assert.Equal(t, 9, pane.Info().Offset, "page up starts to scroll back")
+	r.keys("pgdown", "pgdown")
+	assert.Zero(t, pane.Info().Offset)
+	r.keys("x", "y", "z", "enter")
+	r.shows("xyz")
+	assert.NotContains(t, pane.Capture(), "~", "no page key reached the program")
+}
+
+func TestThePageKeysGoToAFullScreenProgram(t *testing.T) {
+	r := newRig(t, 60, 12)
+	r.reader(`printf '\033[?1049h'; `)
+	r.eventually(func() bool { return r.mux.ActivePane(r.session).Modes().AltScreen }, "never full screen")
+	r.keys("pgup", "pgdown", "enter")
+	r.shows("^[[5~^[[6~")
+}
+
 func TestTheWheelInAFullScreenProgramSendsArrows(t *testing.T) {
 	r := newRig(t, 60, 12)
 	r.reader(`printf '\033[?1049h'; `)
