@@ -75,6 +75,7 @@ func (c *Client) key(p *tml.Program, key tml.Key) bool {
 		c.closeOverlay()
 		return true
 	}
+	hadPrefix := c.prefix
 	if c.prefix {
 		// A prefix kept on for a repeat only takes a key that repeats. Any other key is typed as usual.
 		repeating := c.cancelArmed != nil
@@ -100,7 +101,10 @@ func (c *Client) key(p *tml.Program, key tml.Key) bool {
 	if c.pageKey(pane, name) {
 		return true
 	}
-	pane.Key(key)
+	if !pane.Key(key) && !hadPrefix {
+		// A typed key changes nothing the client draws. What the program answers is pane output, with a frame of its own.
+		p.Unchanged()
+	}
 	return true
 }
 

@@ -83,6 +83,10 @@ func (c *Client) mouse(p *tml.Program, event tml.Mouse) bool {
 	if event.Y >= c.height-barRows {
 		return c.barMouse(p, event)
 	}
+	if c.hover == "" && event.Action == input.Motion && event.Button == input.ButtonNone {
+		// The pointer moving over the window changes nothing the client draws.
+		p.Unchanged()
+	}
 	c.hover = ""
 	c.windowMouse(p, event)
 	return true
