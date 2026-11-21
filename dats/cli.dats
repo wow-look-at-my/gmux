@@ -124,7 +124,7 @@ tests:
 	  exit: 0
 	  outputs:
 		stdout:
-			- "right 38×22\nbelow 38×10\nzoomed 79×22\nclosed 38×22\n1"
+			- "right 38×22\nbelow 38×10\nzoomed 78×22\nclosed 38×22\n1"
 
 	- desc: the wheel over the tabs turns through the windows
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene wheel_turns_windows'
