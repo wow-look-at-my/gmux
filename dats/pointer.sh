@@ -128,5 +128,5 @@ drag_moves_window() {
 info_row_clicks() {
 	clock=$(row "$info_row" | grep -o '[0-9][0-9]:[0-9][0-9]' | tail -n 1) &&
 		click 0 "$info_row" "$clock" && shows outer "[A-Z][a-z][a-z] [0-9]* [A-Z][a-z][a-z] [0-9:]* *$" | tail -n 1 | grep -c ":" &&
-		click 0 "$info_row" "/" && shows outer "copied /" | tail -n 1 | grep -c "copied /"
+		click 0 "$info_row" "/" && shows outer "copied [~/]" | tail -n 1 | grep -c "copied [~/]"
 }
