@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/wow-look-at-my/go-tmux/client"
 	"github.com/wow-look-at-my/go-tmux/server"
 	"github.com/wow-look-at-my/tml/term"
@@ -50,6 +51,7 @@ var (
 
 // Execute runs the command line and reports the process's exit code.
 func Execute(version string, args []string, stdout, stderr io.Writer) int {
+	reset(root)
 	root.Version = version
 	root.SetArgs(args)
 	root.SetOut(stdout)
@@ -59,6 +61,17 @@ func Execute(version string, args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// reset puts every flag back to its default, so a second Execute in one process starts clean.
+func reset(cmd *cobra.Command) {
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		_ = flag.Value.Set(flag.DefValue)
+		flag.Changed = false
+	})
+	for _, sub := range cmd.Commands() {
+		reset(sub)
+	}
 }
 
 // socket is the path of the server this invocation talks to.

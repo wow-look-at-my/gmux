@@ -89,6 +89,13 @@ func (s *Screen) Shows(text string) {
 		"the terminal never showed %q", text)
 }
 
+// Gone waits until the screen no longer holds text.
+func (s *Screen) Gone(text string) {
+	s.t.Helper()
+	require.Eventually(s.t, func() bool { return !strings.Contains(s.Text(), text) }, Wait, 10*time.Millisecond,
+		"the terminal kept showing %q", text)
+}
+
 // Send types input on the terminal.
 func (s *Screen) Send(input string) {
 	s.t.Helper()

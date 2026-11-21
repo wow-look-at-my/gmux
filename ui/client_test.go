@@ -93,7 +93,7 @@ func TestThePrefixRunsCommands(t *testing.T) {
 	r.keys("ctrl+b", "z")
 	assert.Len(t, r.mux.View(r.session).Panes, 1)
 	windows, _ := r.bars()
-	assert.Contains(t, windows, "1:sh Z")
+	assert.Contains(t, windows, "0:sh Z")
 	r.keys("ctrl+b", "z", "ctrl+b", "}")
 	r.send(disarmMsg{})
 	assert.NotEqual(t, 0, r.mux.View(r.session).Panes[1].Rect.X+r.mux.View(r.session).Panes[1].Rect.Y)

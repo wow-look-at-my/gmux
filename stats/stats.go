@@ -180,7 +180,7 @@ func Bytes(v float64) string {
 		v /= 1024
 		unit++
 	}
-	if unit == 0 || v >= 100 {
+	if unit == 0 || v >= 9.95 {
 		return fmt.Sprintf("%.0f%s", v, units[unit])
 	}
 	return fmt.Sprintf("%.1f%s", v, units[unit])
