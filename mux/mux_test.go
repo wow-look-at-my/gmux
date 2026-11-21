@@ -371,6 +371,15 @@ func TestKeysPasteAndThePointerReachTheProgram(t *testing.T) {
 	assert.NotContains(t, pane.Capture(), "<35;")
 }
 
+func TestAKeyReportsWhetherItChangedThePane(t *testing.T) {
+	m := newMux(t)
+	pane := m.ActivePane(newSession(t, m, SessionOptions{}))
+	assert.False(t, pane.Key(input.ParseKey("a")), "a key on the live screen changes nothing by itself")
+	pane.SelectStart(0, 0, ByLine)
+	assert.True(t, pane.Key(input.ParseKey("a")), "a key takes the selection off")
+	assert.False(t, pane.Key(input.ParseKey("a")))
+}
+
 func TestAProgramThatDidNotAskGetsNoPointer(t *testing.T) {
 	m := newMux(t)
 	s := newSession(t, m, SessionOptions{})
