@@ -45,11 +45,15 @@ func (s *Screen) printASCII(p []byte) {
 		if end := x + n; end < s.cols && row[end].Width == 0 {
 			row[end] = Cell{Width: 1, Style: Style{Bg: row[end].Style.Bg}}
 		}
-		dst := row[x : x+n]
-		for i, b := range p[:n-1] {
-			dst[i] = Cell{r: rune(b), Width: 1, Style: st}
+		src := p[:n-1]
+		dst := row[x:][:len(src)]
+		c := Cell{Width: 1, Style: st}
+		for i := range src {
+			c.r = rune(src[i])
+			dst[i] = c
 		}
-		dst[n-1] = Cell{r: rune(last), Width: 1, Style: st}
+		c.r = rune(last)
+		row[x+n-1] = c
 		p = rest
 		if x+n >= s.cols {
 			s.x = s.cols - 1

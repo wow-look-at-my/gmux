@@ -61,6 +61,10 @@ func (s *Screen) Write(p []byte) (int, error) {
 			i++
 			continue
 		}
+		if (s.state == stCSIParam || s.state == stCSIEntry) && b >= '0' && b <= ';' {
+			i = s.csiParams(p, i)
+			continue
+		}
 		s.step(b)
 		i++
 	}
@@ -304,26 +308,38 @@ func (s *Screen) csiByte(b byte) {
 		s.collectInter(b)
 	case s.state == stCSIInter:
 		s.state = stCSIIgnore
-	case b <= '9':
-		s.state = stCSIParam
-		if s.nparams == 0 {
-			s.newParam(false)
-		}
-		i := s.nparams - 1
-		v := max(s.params[i], 0)*10 + int32(b-'0')
-		s.params[i] = min(v, maxParamVal)
-	case b == ';' || b == ':':
-		if s.nparams == 0 {
-			s.newParam(false)
-		}
-		s.state = stCSIParam
-		s.newParam(b == ':')
+	// Write sends digits and separators to csiParams, so b is a private marker here.
 	case s.state == stCSIEntry:
 		s.priv = b
 		s.state = stCSIParam
 	default:
 		s.state = stCSIIgnore
 	}
+}
+
+// csiParams consumes a run of digits and separators of a CSI from p[i:]. It
+// returns the index of the first byte it did not consume.
+func (s *Screen) csiParams(p []byte, i int) int {
+	s.state = stCSIParam
+	if s.nparams == 0 {
+		s.newParam(false)
+	}
+	cur := s.params[s.nparams-1]
+	for ; i < len(p); i++ {
+		b := p[i]
+		if b >= '0' && b <= '9' {
+			cur = min(max(cur, 0)*10+int32(b-'0'), maxParamVal)
+			continue
+		}
+		if b != ';' && b != ':' {
+			break
+		}
+		s.params[s.nparams-1] = cur
+		s.newParam(b == ':')
+		cur = s.params[s.nparams-1]
+	}
+	s.params[s.nparams-1] = cur
+	return i
 }
 
 // newParam starts a parameter; past the cap the last slot is reused.
