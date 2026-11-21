@@ -22,10 +22,9 @@ func TestANarrowerScreenCutsLinesAndAWiderOneJoinsThem(t *testing.T) {
 	assert.Equal(t, []string{"01234"}, historyText(s), "the rows that no longer fit go up into the scrollback")
 	assert.Equal(t, "56789\nabcde\nfghij\nxyz", s.String())
 	assert.Equal(t, Cursor{X: 3, Y: 3, Visible: true}, s.Cursor())
-	for y := range 3 {
-		assert.True(t, s.RowWrapped(y), "row %d runs on", y)
-	}
-	assert.False(t, s.RowWrapped(3))
+	assert.True(t, s.HistoryWrapped(0))
+	assert.Equal(t, []bool{true, true, false, false},
+		[]bool{s.RowWrapped(0), s.RowWrapped(1), s.RowWrapped(2), s.RowWrapped(3)}, "the long line ends on its fourth row")
 
 	s.Resize(20, 4)
 	assert.Zero(t, s.HistoryLen(), "nothing is lost: the rows come back")
@@ -44,10 +43,10 @@ func TestReflowReachesTheScrollback(t *testing.T) {
 	require.Equal(t, []string{"aaaaaaaa", "bbbb", "cccc"}, historyText(s))
 
 	s.Resize(4, 2)
-	assert.Equal(t, "aaaa\naaaa\nbbbb\ncccc\ndddd\n$ ", all(s))
+	assert.Equal(t, "aaaa\naaaa\nbbbb\ncccc\ndddd\n$", all(s))
 	s.Resize(12, 2)
-	assert.Equal(t, "aaaaaaaabbbb\ncccc\ndddd\n$ ", all(s))
-	assert.Equal(t, Cursor{X: 2, Y: 1, Visible: true}, s.Cursor())
+	assert.Equal(t, "aaaaaaaabbbb\ncccc\ndddd\n$", all(s))
+	assert.Equal(t, Cursor{X: 2, Y: 1, Visible: true}, s.Cursor(), "the cursor is still after the prompt's space")
 }
 
 func TestReflowKeepsStylesAndBlankLines(t *testing.T) {
@@ -76,14 +75,19 @@ func TestReflowKeepsACursorThatWaitsToWrap(t *testing.T) {
 }
 
 func TestReflowKeepsTheCursorOnItsCellInsideALine(t *testing.T) {
-	s := New(10, 3, Options{})
+	s := New(10, 4, Options{})
 	s.Write([]byte("0123456789abcd\x1b[1;4H"))
-	s.Resize(4, 3)
+	s.Resize(4, 4)
 	assert.Equal(t, "0123\n4567\n89ab\ncd", all(s))
-	// The text below the cursor row fits, so the cursor row is the first on screen.
 	assert.Equal(t, Cursor{X: 3, Y: 0, Visible: true}, s.Cursor())
 	s.Write([]byte("#"))
 	assert.Equal(t, "012#\n4567\n89ab\ncd", all(s))
+
+	// The cursor row stays on screen. Text below it that no longer fits is lost from the bottom.
+	s.Resize(2, 3)
+	assert.Equal(t, "01\n2#\n45\n67", all(s))
+	assert.Equal(t, Cursor{X: 1, Y: 0, Visible: true}, s.Cursor())
+	assert.Equal(t, []string{"01"}, historyText(s))
 }
 
 func TestReflowRespectsTheScrollbackLimit(t *testing.T) {
@@ -98,7 +102,7 @@ func TestReflowLeavesTheAlternateScreenAlone(t *testing.T) {
 	s := New(8, 2, Options{})
 	s.Write([]byte("0123456789\x1b[?1049h\x1b[HALTERNATE"))
 	s.Resize(4, 2)
-	assert.Equal(t, "ALTE\nTE", s.String(), "a full-screen program redraws itself: its rows are only cut")
+	assert.Equal(t, "ALTE\nE", s.String(), "a full-screen program redraws itself: its rows are only cut")
 	s.Write([]byte("\x1b[?1049l"))
 	assert.Equal(t, "0123\n4567\n89", all(s))
 }
