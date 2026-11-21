@@ -92,6 +92,23 @@ tests:
 		stderr:
 			- "no server is running"
 
+	# The next tests run the binary on a real terminal: a pane of an outer session. The pointer reports are typed
+	# into that pane the way a terminal sends them, and the pane's text is what the inner gmux drew.
+	- desc: a click on the bar's new-window button adds a window
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && click_adds_window'
+	  exit: 0
+	  outputs:
+		stdout:
+			- " demo  0:sh  1:sh "
+			- "CPU"
+
+	- desc: a right click on a tab opens its menu, and a click on a tab shows its window
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && tab_menu_and_switch'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "1\n1"
+
 	- desc: attaching without a terminal is refused
 	  cmd: dats/with-socket.sh 'gmux new -d -s t && gmux attach -t t </dev/null'
 	  exit: 1
