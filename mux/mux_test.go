@@ -299,6 +299,11 @@ func TestANarrowerThenWiderSessionKeepsItsText(t *testing.T) {
 	s := newSession(t, m, SessionOptions{Cols: 80, Rows: 10})
 	pane := m.ActivePane(s)
 	long := strings.Repeat("0123456789", 6)
+	t.Cleanup(func() {
+		if t.Failed() {
+			t.Logf("the pane shows:\n%s", pane.Capture())
+		}
+	})
 	typeLine(m, s, "echo "+long)
 	shows(t, m, s, "\n"+long)
 

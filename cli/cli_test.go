@@ -171,7 +171,7 @@ func TestAttachingCommands(t *testing.T) {
 func TestNoCommandStartsASessionAndAttaches(t *testing.T) {
 	h := newHarness(t)
 	done := h.background()
-	h.term.Shows(" 0 ")
+	h.term.Shows(" cli ")
 	h.srv.Close()
 	assert.Equal(t, "[server exited]\n", h.await(done))
 }
