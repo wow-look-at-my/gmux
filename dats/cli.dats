@@ -1,7 +1,7 @@
 # Command-line tests of the gmux binary. go-toolchain runs every *.dats under dats/ after the build, and
 # $GO_TOOLCHAIN_DATS_BUILD_DIR holds a copy of the binary. Each test runs its script through dats/with-socket.sh,
-# which gives it a server of its own. A test never attaches: there is no terminal in the sandbox. What a terminal
-# sees is covered by the Go tests, which hand a client a pseudo-terminal.
+# which gives it a server of its own. The sandbox has no terminal, so the pointer tests make one: a pane of an
+# outer session. The Go tests hand a client a pseudo-terminal for the rest of what a terminal sees.
 
 sandbox:
 	network: false
@@ -95,7 +95,7 @@ tests:
 	# The next tests run the binary on a real terminal: a pane of an outer session. The pointer reports are typed
 	# into that pane the way a terminal sends them, and the pane's text is what the inner gmux drew.
 	- desc: a click on the bar's new-window button adds a window
-	  cmd: dats/with-socket.sh '. dats/pointer.sh && click_adds_window'
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene click_adds_window'
 	  exit: 0
 	  outputs:
 		stdout:
@@ -103,7 +103,44 @@ tests:
 			- "MEM "
 
 	- desc: a right click on a tab opens its menu, and a click on a tab shows its window
-	  cmd: dats/with-socket.sh '. dats/pointer.sh && tab_menu_and_switch'
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene tab_menu_and_switch'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "1\n1"
+
+	- desc: the buttons of the window row split, zoom and close the pane, and open the help
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene window_buttons'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "right 39×22\nbelow 39×10\nzoomed 80×22\nclosed 39×22\n1"
+
+	- desc: the wheel over the tabs turns through the windows
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene wheel_turns_windows'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "1\n1"
+
+	- desc: the middle button on a tab closes its window
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene middle_click_closes_window'
+	  exit: 0
+	  outputs:
+		stdout:
+			- " demo  0:sh  "
+		"!stdout":
+			- "1:sh"
+
+	- desc: a tab dragged over another moves its window there
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene drag_moves_window'
+	  exit: 0
+	  outputs:
+		stdout:
+			- " demo  0:sleep  1:sh "
+
+	- desc: a click on the clock shows the date, and a click on the directory copies it
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene info_row_clicks'
 	  exit: 0
 	  outputs:
 		stdout:
