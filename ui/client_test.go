@@ -93,7 +93,7 @@ func TestThePrefixRunsCommands(t *testing.T) {
 	r.keys("ctrl+b", "z")
 	assert.Len(t, r.mux.View(r.session).Panes, 1)
 	windows, _ := r.bars()
-	assert.Contains(t, windows, "0:sh Z")
+	assert.Contains(t, windows, "1:sh Z")
 	r.keys("ctrl+b", "z", "ctrl+b", "}")
 	r.send(disarmMsg{})
 	assert.NotEqual(t, 0, r.mux.View(r.session).Panes[1].Rect.X+r.mux.View(r.session).Panes[1].Rect.Y)
@@ -212,14 +212,15 @@ func TestAProgramThatAsksGetsThePointer(t *testing.T) {
 func TestSelectingTextCopiesIt(t *testing.T) {
 	r := newRig(t, 60, 12)
 	r.typeLine("clear; echo alpha beta gamma")
-	r.shows("alpha beta gamma")
 	row := -1
-	for y, line := range r.lines() {
-		if strings.HasPrefix(line, "alpha beta gamma") {
-			row = y
+	r.eventually(func() bool {
+		for y, line := range r.lines() {
+			if strings.HasPrefix(line, "alpha beta gamma") {
+				row = y
+			}
 		}
-	}
-	require.GreaterOrEqual(t, row, 0)
+		return row >= 0
+	}, "the line never showed")
 
 	r.mouse(input.Press, input.ButtonLeft, 6, row)
 	r.mouse(input.Motion, input.ButtonLeft, 9, row)

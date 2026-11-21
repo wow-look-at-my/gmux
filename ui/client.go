@@ -100,8 +100,8 @@ func New(opts Options) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	registry := widget.NewRegistry().Bind("Panes", newPanes(c))
-	c.view, err = tml.Load(files, "app.tml", tml.Options{Dark: !opts.Light, Widgets: registry})
+	registry := widget.NewRegistry().Bind("Panes", newPanes(c)).Bind("Hit", hit{})
+	c.view, err = tml.Load(files, "screen.tml", tml.Options{Dark: !opts.Light, Widgets: registry})
 	if err != nil {
 		return nil, err
 	}

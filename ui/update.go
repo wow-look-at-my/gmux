@@ -76,11 +76,15 @@ func (c *Client) key(p *tml.Program, key tml.Key) bool {
 		return true
 	}
 	if c.prefix {
+		// A prefix kept on for a repeat only takes a key that repeats. Any other key is typed as usual.
+		repeating := c.cancelArmed != nil
 		c.disarm()
-		if c.command(p, key) {
-			c.arm(p)
+		if !repeating || repeats(name) {
+			if c.command(p, key) {
+				c.arm(p)
+			}
+			return true
 		}
-		return true
 	}
 	if name == prefixKey {
 		c.prefix = true
@@ -172,8 +176,8 @@ func (c *Client) event(p *tml.Program, event tml.Event) {
 		}
 	case tml.Scrolled:
 		// The wheel over the window row turns through the windows.
-		if event.ID == "session" || event.ID == idMore || strings.HasPrefix(event.ID, tabPrefix) ||
-			event.ID == "bar-windows" || event.ID == "tabs" {
+		if event.ID == "session" || event.ID == idMore || event.ID == "bar-windows" ||
+			strings.HasPrefix(event.ID, tabPrefix) {
 			c.mux.StepWindow(c.session, event.Delta)
 		}
 	case tml.Menu:

@@ -176,7 +176,11 @@ func (c *Client) Props() tml.Props {
 	}
 	if pane := c.mux.ActivePane(c.session); pane != nil {
 		p := pane.Info()
-		props["dir"] = sema.StringValue(shortDir(p.Dir))
+		dir := shortDir(p.Dir)
+		props["dir"] = sema.StringValue(dir)
+		// The directory's column takes room ahead of the gap beside it, up to what the directory needs.
+		props["infoColumns"] = sema.StringValue("auto,1000*[1.." + strconv.Itoa(cell.Width(dir)+2) +
+			"],auto,auto,auto,*,auto,auto,auto,auto,auto,auto")
 		props["command"] = sema.StringValue(p.Command)
 		props["size"] = sema.StringValue(strconv.Itoa(p.Cols) + "×" + strconv.Itoa(p.Rows))
 	}

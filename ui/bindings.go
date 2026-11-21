@@ -78,6 +78,16 @@ var sides = map[string]layout.Side{
 	"left": layout.Left, "right": layout.Right, "up": layout.Up, "down": layout.Down,
 }
 
+// repeats reports whether a key may follow another without the prefix.
+func repeats(name string) bool {
+	for _, b := range bindings {
+		if b.key == name {
+			return b.repeat
+		}
+	}
+	return false
+}
+
 // command runs the key that followed the prefix. It reports whether the prefix stays armed for a repeat.
 func (c *Client) command(p *tml.Program, key tml.Key) bool {
 	name := key.String()

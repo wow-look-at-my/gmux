@@ -1,0 +1,165 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Screen">
+	<Import src="./theme.tml"/>
+
+	<Property name="session" type="string" default=""/>
+	<Property name="tabs" type="record[]" default=""/>
+	<Property name="actions" type="record[]" default=""/>
+
+	<Property name="infoColumns" type="string" default="auto,*,auto,auto,auto,*,auto,auto,auto,auto,auto,auto"/>
+	<Property name="mode" type="string" default=""/>
+	<Property name="dir" type="string" default=""/>
+	<Property name="command" type="string" default=""/>
+	<Property name="size" type="string" default=""/>
+	<Property name="note" type="string" default=""/>
+
+	<Property name="cpu" type="string" default=""/>
+	<Property name="cpuHistory" type="string[]" default=""/>
+	<Property name="mem" type="string" default=""/>
+	<Property name="net" type="string" default=""/>
+	<Property name="load" type="string" default=""/>
+	<Property name="gpu" type="string" default=""/>
+	<Property name="clock" type="string" default=""/>
+
+	<Property name="menuOpen" type="bool" default="false"/>
+	<Property name="menuTitle" type="string" default=""/>
+	<Property name="menuX" type="int" default="0"/>
+	<Property name="menuY" type="int" default="0"/>
+	<Property name="menu" type="record[]" default=""/>
+
+	<Property name="promptOpen" type="bool" default="false"/>
+	<Property name="promptTitle" type="string" default=""/>
+	<Property name="promptValue" type="string" default=""/>
+	<Property name="promptCursor" type="int" default="0"/>
+
+	<Property name="helpOpen" type="bool" default="false"/>
+	<Property name="help" type="record[]" default=""/>
+
+	<!-- One clickable cell of a bar: a window tab, or a button. Hit is what makes it answer the pointer. -->
+	<DataTemplate name="Chip">
+		<Property name="id" type="string" required="true"/>
+		<Property name="action" type="string" required="true"/>
+		<Property name="label" type="string" required="true"/>
+		<Property name="look" type="string" required="true"/>
+		<Template>
+			<Hit id="{id}" action="{action}" style="{look}">
+				<Text overflow="clip">{label}</Text>
+			</Hit>
+		</Template>
+	</DataTemplate>
+
+	<DataTemplate name="MenuItem">
+		<Property name="id" type="string" required="true"/>
+		<Property name="action" type="string" required="true"/>
+		<Property name="label" type="string" required="true"/>
+		<Property name="look" type="string" required="true"/>
+		<Template>
+			<Hit id="{id}" action="{action}" style="{look}" width="*">
+				<Text overflow="clip">{label}</Text>
+			</Hit>
+		</Template>
+	</DataTemplate>
+
+	<DataTemplate name="HelpLine">
+		<Property name="key" type="string" required="true"/>
+		<Property name="what" type="string" required="true"/>
+		<Template>
+			<Grid columns="20,*" gap="1">
+				<Text Grid.column="0" style="key" overflow="clip">{key}</Text>
+				<Text Grid.column="1" overflow="clip">{what}</Text>
+			</Grid>
+		</Template>
+	</DataTemplate>
+
+	<Template>
+		<Canvas>
+			<Grid id="screen" columns="*" rows="*,1,1">
+				<Panes id="panes" Grid.row="0"/>
+
+				<Hit id="bar-windows" Grid.row="1" style="bar">
+					<Stack orientation="horizontal">
+						<Hit id="session" action="sessions" style="chip.session">
+							<Text overflow="clip">{session}</Text>
+						</Hit>
+						<Stack orientation="horizontal" itemsSource="{tabs}" itemTemplate="Chip"/>
+						<Spacer width="*"/>
+						<Stack orientation="horizontal" itemsSource="{actions}" itemTemplate="Chip"/>
+					</Stack>
+				</Hit>
+
+				<!-- The columns give way in the order collapse names them, so a narrow terminal keeps the directory
+				     and the clock longest. The directory's column is cut to the room there is. -->
+				<Grid id="bar-info" Grid.row="2" style="bar" columns="{infoColumns}" collapse="10,9,8,3,2,7,6,11">
+					<Box Grid.column="0" style="chip.mode" if="{mode}">
+						<Text overflow="clip">{mode}</Text>
+					</Box>
+					<Hit id="dir" action="copy-dir" Grid.column="1" style="chip" if="{dir}">
+						<Text overflow="path">{dir}</Text>
+					</Hit>
+					<Box Grid.column="2" style="chip" if="{command}">
+						<Text style="dim" overflow="clip">{command}</Text>
+					</Box>
+					<Box Grid.column="3" style="chip" if="{size}">
+						<Text style="dim" overflow="clip">{size}</Text>
+					</Box>
+					<Box Grid.column="4" style="chip.note" if="{note}">
+						<Text overflow="clip">{note}</Text>
+					</Box>
+					<Hit id="stat-cpu" action="stats" Grid.column="6" style="chip" if="{cpu}">
+						<Stack orientation="horizontal" gap="1">
+							<Text style="dim">CPU</Text>
+							<Sparkline values="{cpuHistory}" max="100" color="{theme.accent}"/>
+							<Text overflow="clip">{cpu}</Text>
+						</Stack>
+					</Hit>
+					<Hit id="stat-mem" action="stats" Grid.column="7" style="chip" if="{mem}">
+						<Stack orientation="horizontal" gap="1">
+							<Text style="dim">MEM</Text>
+							<Text overflow="clip">{mem}</Text>
+						</Stack>
+					</Hit>
+					<Hit id="stat-gpu" action="stats" Grid.column="8" style="chip" if="{gpu}">
+						<Stack orientation="horizontal" gap="1">
+							<Text style="dim">GPU</Text>
+							<Text overflow="clip">{gpu}</Text>
+						</Stack>
+					</Hit>
+					<Hit id="stat-net" action="stats" Grid.column="9" style="chip" if="{net}">
+						<Stack orientation="horizontal" gap="1">
+							<Text style="dim">NET</Text>
+							<Text overflow="clip">{net}</Text>
+						</Stack>
+					</Hit>
+					<Hit id="stat-load" action="stats" Grid.column="10" style="chip" if="{load}">
+						<Stack orientation="horizontal" gap="1">
+							<Text style="dim">LOAD</Text>
+							<Text overflow="clip">{load}</Text>
+						</Stack>
+					</Hit>
+					<Hit id="clock" action="clock" Grid.column="11" style="chip" if="{clock}">
+						<Text overflow="clip">{clock}</Text>
+					</Hit>
+				</Grid>
+			</Grid>
+
+			<Border id="menu" kind="rounded" title="{menuTitle}" style="menu" pad="0" if="{menuOpen}"
+				Canvas.x="{menuX}" Canvas.y="{menuY}">
+				<Stack itemsSource="{menu}" itemTemplate="MenuItem"/>
+			</Border>
+
+			<Popup id="prompt" title="{promptTitle}" style="menu" width="44" if="{promptOpen}">
+				<Stack gap="1">
+					<Textbox id="prompt-input" action="prompt" value="{promptValue}" cursor="{promptCursor}" width="*"/>
+					<Text style="dim">enter accepts, esc cancels</Text>
+				</Stack>
+			</Popup>
+
+			<Popup id="help" title="gmux keys" style="menu" width="64" if="{helpOpen}">
+				<Stack>
+					<Stack itemsSource="{help}" itemTemplate="HelpLine"/>
+					<Text style="dim">any key closes this</Text>
+				</Stack>
+			</Popup>
+		</Canvas>
+	</Template>
+</Component>
