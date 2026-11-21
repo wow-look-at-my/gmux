@@ -113,13 +113,17 @@ func TestResizeKeepsLinesBelowCursor(t *testing.T) {
 func TestResizeWidth(t *testing.T) {
 	s := New(6, 2, Options{})
 	s.Write([]byte("abcd世\x1b[2;1H\x1b[44mx"))
+	// The wide glyph has no room at the end of the narrower row, and goes to a row of its own.
 	s.Resize(5, 2)
-	assert.Equal(t, "abcd\nx", s.String())
-	assert.Equal(t, uint8(1), s.Row(0)[4].Width)
+	assert.Equal(t, "世\nx", s.String())
+	assert.Equal(t, []string{"abcd"}, historyText(s))
+	assert.Equal(t, uint8(1), s.HistoryRow(0)[4].Width)
+	assert.True(t, s.HistoryWrapped(0))
 	assert.Len(t, s.Row(0), 5)
 
 	s.Resize(8, 2)
-	assert.Equal(t, "abcd\nx", s.String())
+	assert.Equal(t, "abcd世\nx", s.String())
+	assert.Zero(t, s.HistoryLen())
 	assert.Len(t, s.Row(1), 8)
 	assert.True(t, s.Row(1)[7].Style.Bg.IsDefault())
 
@@ -152,7 +156,7 @@ func TestResizeHistoryWidths(t *testing.T) {
 	s := New(4, 2, Options{})
 	s.Write([]byte(lines(4)))
 	s.Resize(8, 2)
-	assert.Len(t, s.HistoryRow(0), 4)
+	assert.Len(t, s.HistoryRow(0), 8)
 	s.Write([]byte("\r\nabcdefgh"))
 	assert.Len(t, s.HistoryRow(2), 8)
 	s.Resize(8, 6)

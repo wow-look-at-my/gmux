@@ -3,7 +3,8 @@ package vt
 
 const tabWidth = 8
 
-// Resize changes the screen size. Rows keep their content without reflow.
+// Resize changes the screen size. A change of width rewraps the primary screen and its scrollback. The alternate
+// screen has no text lines to rewrap: its rows are cut or filled.
 func (s *Screen) Resize(cols, rows int) {
 	cols, rows = max(cols, 1), max(rows, 1)
 	if cols == s.cols && rows == s.rows {
@@ -12,12 +13,18 @@ func (s *Screen) Resize(cols, rows int) {
 	oldCols := s.cols
 	s.cols = cols
 
-	// The primary grid exchanges lines with scrollback around its cursor row.
-	cy := &s.y
+	// The primary screen's cursor is the saved one while the alternate screen shows.
+	cx, cy, pending := &s.x, &s.y, &s.pendingWrap
 	if s.modes.AltScreen {
-		cy = &s.saved[0].y
+		cx, cy, pending = &s.saved[0].x, &s.saved[0].y, &s.saved[0].pendingWrap
 	}
-	s.resizePrimary(rows, cy)
+	if cols != oldCols {
+		s.reflow(rows, cx, cy, pending)
+	} else {
+		// The primary grid exchanges lines with scrollback around its cursor row.
+		s.resizePrimary(rows, cy)
+		*pending = false
+	}
 	s.resizeAlt(rows)
 	s.rows = rows
 
@@ -31,7 +38,9 @@ func (s *Screen) Resize(cols, rows int) {
 	s.top, s.bottom = 0, rows-1
 	s.x = min(s.x, cols-1)
 	s.y = min(max(s.y, 0), rows-1)
-	s.pendingWrap = false
+	if s.modes.AltScreen {
+		s.pendingWrap = false
+	}
 	for i := range s.saved {
 		s.saved[i].x = min(s.saved[i].x, cols-1)
 		s.saved[i].y = min(max(s.saved[i].y, 0), rows-1)
