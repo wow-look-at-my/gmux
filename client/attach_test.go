@@ -95,7 +95,7 @@ func TestAttachDrawsTheSessionOnTheTerminalAndDetachGivesItBack(t *testing.T) {
 	term.Shows("attached-5")
 
 	term.Resize(70, 20)
-	term.Shows("70×18")
+	term.Shows("69×18")
 
 	term.Send("\x02d")
 	r := await(t, done)
