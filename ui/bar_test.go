@@ -130,7 +130,7 @@ func TestARightClickOnATabOpensItsMenu(t *testing.T) {
 	assert.Contains(t, screen, "window 2", "the second tab's window, by the number on its tab")
 	assert.Contains(t, screen, "Move right")
 
-	r.clickOn("menu-2")
+	r.clickItem(2)
 	assert.Equal(t, "", r.client.overlay())
 	assert.Equal(t, "[sh] edit logs", r.windows())
 
@@ -163,16 +163,20 @@ func TestARightClickInAPaneOpensThePaneMenu(t *testing.T) {
 	screen := strings.Join(r.lines(), "\n")
 	assert.Contains(t, screen, "Split right")
 	assert.NotContains(t, screen, "Paste", "there is nothing to paste yet")
-	x, y := r.at("menu-0")
+	x, y := r.item(0)
 	r.mouse(input.Motion, input.ButtonNone, x, y)
-	assert.Equal(t, "menu-0", r.client.hover)
+	assert.Equal(t, 0, r.client.menu.hover, "the pointer marks the item it is on")
+	r.mouse(input.Motion, input.ButtonNone, x, y-1)
+	assert.Equal(t, -1, r.client.menu.hover, "the border is no item")
+	r.click(input.ButtonLeft, x, y-1)
+	require.Equal(t, "menu", r.client.overlay(), "a click on the border does nothing")
 	r.click(input.ButtonLeft, x, y)
 	assert.Len(t, r.mux.View(r.session).Panes, 2)
 
 	r.client.clip = "echo from-the-menu\n"
 	r.mouse(input.Press, input.ButtonRight, 10, 4)
 	assert.Contains(t, strings.Join(r.lines(), "\n"), "Paste")
-	r.clickOn("menu-5")
+	r.clickItem(5)
 	r.shows("from-the-menu")
 
 	// A menu opened at the edge of the screen moves so that all of it shows.
@@ -206,7 +210,7 @@ func TestAMenuIsAsWideAsItsLongestLine(t *testing.T) {
 	assert.Equal(t, len("a title longer than the item")+4, rect.W, "a longer title sets the width")
 
 	rect = r.menuRect("pane", 10, 4, menuItem{label: strings.Repeat("w", 90), action: "zoom"})
-	assert.Equal(t, menuCap, rect.W, "a label longer than the cap is cut")
+	assert.Equal(t, 40, rect.W, "a label longer than the widget's cap is cut")
 
 	narrow := newRig(t, 30, 12)
 	rect = narrow.menuRect("pane", 5, 2, menuItem{label: strings.Repeat("w", 90), action: "zoom"})
@@ -223,19 +227,19 @@ func TestTheSessionChipListsTheSessions(t *testing.T) {
 	screen := strings.Join(r.lines(), "\n")
 	assert.Contains(t, screen, "● main")
 	assert.Contains(t, screen, "other  1 win")
-	r.clickOn("menu-1")
+	r.clickItem(1)
 	assert.Same(t, other, r.client.Session())
 	info, _ := r.mux.Info(r.session)
 	assert.Zero(t, info.Attached, "the client left its first session")
 
 	r.keys("ctrl+b", "s")
-	r.clickOn("menu-2")
+	r.clickItem(2)
 	assert.Len(t, r.mux.List(), 3, "the menu started a session")
 	assert.NotSame(t, other, r.client.Session())
 
 	x, y := r.at("session")
 	r.mouse(input.Press, input.ButtonRight, x, y)
-	r.clickOn("menu-5")
+	r.clickItem(5)
 	assert.Equal(t, Detached, r.client.Outcome())
 }
 
@@ -252,7 +256,7 @@ func TestTabsThatDoNotFitStandBehindOneCell(t *testing.T) {
 	r.clickOn(idMore)
 	require.Equal(t, "menu", r.client.overlay())
 	assert.Contains(t, strings.Join(r.lines(), "\n"), "6:epsilon-window")
-	r.clickOn("menu-0")
+	r.clickItem(0)
 	windows, _ = r.bars()
 	assert.Contains(t, windows, "1:sh")
 

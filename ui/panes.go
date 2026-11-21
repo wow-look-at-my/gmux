@@ -9,6 +9,7 @@ import (
 	"github.com/wow-look-at-my/go-tmux/mux"
 	"github.com/wow-look-at-my/go-tmux/vt"
 	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 // panes is the element behind <Panes>. One instance belongs to one client.
@@ -124,12 +125,39 @@ func (w *panes) dividers(c cell.Canvas, view mux.WindowView) {
 	}
 }
 
-// pane draws one pane's screen on a canvas of the pane's size.
+// Gutter is the columns a pane keeps free at its right edge, for its scrollbar.
+const Gutter = 1
+
+// paneBar is a pane's scrollbar: its history above a view of some rows, scrolled back by an offset.
+func paneBar(history, offset, rows int) widget.Scrollbar {
+	return widget.Scrollbar{View: rows, Y: history - offset, MaxY: history}
+}
+
+// scrollbar draws a pane's scrollbar in its gutter. A pane with no history to scroll has none: a shell that has
+// printed less than a screen, or a full-screen program.
+func (w *panes) scrollbar(c cell.Canvas, f mux.Frame, active bool, x, height int) {
+	history := f.Screen.HistoryLen()
+	if history == 0 || f.Screen.Modes().AltScreen {
+		return
+	}
+	style := borderStyle
+	if active {
+		style = activeStyle
+	}
+	paneBar(history, f.Offset, height).Draw(c, x, style)
+}
+
+// pane draws one pane's screen on a canvas of the pane's size. The terminal is narrower than the pane by the gutter.
 func (w *panes) pane(c cell.Canvas, pane mux.PaneView) {
 	width, height := c.Size()
+	gutter := min(w.client.mux.Gutter(), max(0, width-1))
+	width -= gutter
 	pane.Pane.Draw(func(f mux.Frame) {
 		for y := range height {
 			w.row(c, f, y, width)
+		}
+		if gutter > 0 {
+			w.scrollbar(c, f, pane.Active, width, height)
 		}
 		if f.Offset > 0 {
 			note := "[" + strconv.Itoa(f.Offset) + "/" + strconv.Itoa(f.Screen.HistoryLen()) + "]"

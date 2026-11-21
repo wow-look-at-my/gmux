@@ -80,7 +80,7 @@ func TestAttachDrawsTheSessionOnTheTerminalAndDetachGivesItBack(t *testing.T) {
 	done := attach(socket, server.Request{Create: true, Name: "e2e", Env: env()}, term)
 	term.Shows(" e2e ")
 	term.Shows("1:sh")
-	term.Shows("100×22")
+	term.Shows("99×22")
 
 	term.Send("echo attached-$((2+3))\r")
 	term.Shows("attached-5")

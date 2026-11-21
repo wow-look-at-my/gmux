@@ -28,8 +28,5 @@
 	<Style name="chip.note" extends="chip" fg="{theme.good}"/>
 
 	<Style name="menu" bg="{theme.menu}" fg="{theme.barText}"/>
-	<Style name="menu.item" padding="0 1"/>
-	<Style name="menu.item.hover" extends="menu.item" bg="{theme.accent}" fg="{theme.accentText}"/>
-	<Style name="menu.title" padding="0 1" fg="{theme.dim}"/>
 	<Style name="key" fg="{theme.accent}" bold="true"/>
 </Theme>

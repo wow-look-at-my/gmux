@@ -25,8 +25,8 @@
 	<Property name="menuTitle" type="string" default=""/>
 	<Property name="menuX" type="int" default="0"/>
 	<Property name="menuY" type="int" default="0"/>
-	<Property name="menuWidth" type="int" default="0"/>
-	<Property name="menu" type="record[]" default=""/>
+	<Property name="menuItems" type="string[]" default=""/>
+	<Property name="menuSelected" type="int" default="-1"/>
 
 	<Property name="promptOpen" type="bool" default="false"/>
 	<Property name="promptTitle" type="string" default=""/>
@@ -44,18 +44,6 @@
 		<Property name="look" type="string" required="true"/>
 		<Template>
 			<Hit id="{id}" action="{action}" style="{look}">
-				<Text overflow="clip">{label}</Text>
-			</Hit>
-		</Template>
-	</DataTemplate>
-
-	<DataTemplate name="MenuItem">
-		<Property name="id" type="string" required="true"/>
-		<Property name="action" type="string" required="true"/>
-		<Property name="label" type="string" required="true"/>
-		<Property name="look" type="string" required="true"/>
-		<Template>
-			<Hit id="{id}" action="{action}" style="{look}" width="*">
 				<Text overflow="clip">{label}</Text>
 			</Hit>
 		</Template>
@@ -143,10 +131,9 @@
 				</Grid>
 			</Grid>
 
-			<Border id="menu" kind="rounded" title="{menuTitle}" style="menu" pad="0" if="{menuOpen}"
-				Canvas.x="{menuX}" Canvas.y="{menuY}" width="{menuWidth}">
-				<Stack itemsSource="{menu}" itemTemplate="MenuItem"/>
-			</Border>
+			<Menu id="menu" action="menu" title="{menuTitle}" items="{menuItems}" selected="{menuSelected}"
+				accent="{theme.accent}" accentText="{theme.accentText}" style="menu" if="{menuOpen}"
+				Canvas.x="{menuX}" Canvas.y="{menuY}"/>
 
 			<Popup id="prompt" title="{promptTitle}" style="menu" width="44" if="{promptOpen}">
 				<Stack gap="1">

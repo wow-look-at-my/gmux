@@ -67,6 +67,7 @@ func New(opts Options) *Server {
 		opts.Logf = func(string, ...any) {}
 	}
 	opts.Mux.Socket = opts.Socket
+	opts.Mux.Gutter = ui.Gutter
 	return &Server{
 		opts: opts, mux: mux.New(opts.Mux), attached: map[int]*attachment{},
 		done: make(chan struct{}), lastUsed: time.Now(),

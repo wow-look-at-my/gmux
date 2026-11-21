@@ -172,13 +172,7 @@ func (c *Client) menuKey(p *tml.Program, name string) {
 	case "down", "j", "tab":
 		m.hover = (m.hover + 1) % len(m.items)
 	case "enter", "space":
-		if m.hover >= 0 && m.hover < len(m.items) {
-			action := m.items[m.hover].action
-			c.closeOverlay()
-			c.act(p, action)
-			return
-		}
-		c.closeOverlay()
+		c.pick(p, m.hover)
 	default:
 		c.closeOverlay()
 	}
@@ -214,14 +208,16 @@ func (c *Client) activated(p *tml.Program, event tml.Event) {
 		}
 		return
 	}
-	if event.Action == "" {
+	if event.ID == menuID {
+		// The menu is one element. Its row under the click is the item, and a click on its border is none.
+		if index := c.menuItemOn(event.Y); index >= 0 {
+			c.pick(p, index)
+		}
 		return
 	}
-	menuItem := strings.HasPrefix(event.ID, menuPrefix)
-	if c.overlay() != "" && !menuItem {
+	if event.Action == "" || c.overlay() != "" {
 		return
 	}
-	c.closeOverlay()
 	c.act(p, event.Action)
 }
 

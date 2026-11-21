@@ -26,7 +26,12 @@ type Config struct {
 	Term string
 	// Socket is the server's address, exported to a pane's program as GMUX.
 	Socket string
+	// Gutter is the columns at the right edge of every pane that its terminal does not use.
+	Gutter int
 }
+
+// Gutter is the columns a pane keeps free at its right edge.
+func (m *Mux) Gutter() int { return m.cfg.Gutter }
 
 // DefaultTerm is the terminal type a pane's program is told it runs on.
 const DefaultTerm = "xterm-256color"
@@ -155,7 +160,7 @@ func (m *Mux) NewSession(opts SessionOptions) (*Session, error) {
 	s := &Session{
 		ID: m.nextID.session, Name: name, Created: time.Now(),
 		env: opts.Env, dir: dir, cols: cols, rows: rows,
-		sizes: map[int]size{}, last: -1,
+		sizes: map[int]size{}, last: -1, gutter: m.cfg.Gutter,
 	}
 	if _, err := m.addWindow(s, opts.Spawn); err != nil {
 		return nil, err

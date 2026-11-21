@@ -25,6 +25,8 @@ const (
 	dragProgram
 	// dragTab moves a window's tab along the bar.
 	dragTab
+	// dragScroll holds the thumb of a pane's scrollbar.
+	dragScroll
 )
 
 // drag is what the held button is doing. It owns the pointer until the button comes up.
@@ -35,6 +37,8 @@ type drag struct {
 	rect layout.Rect
 	// index is the window whose tab is held, and startX where the pointer took it.
 	index, startX int
+	// grab is the row of a scrollbar's thumb that the pointer holds.
+	grab int
 	// moved is set once the pointer has gone far enough for the press to be a drag and not a click.
 	moved bool
 }
@@ -95,12 +99,10 @@ func (c *Client) mouse(p *tml.Program, event tml.Mouse) bool {
 // overlayMouse leaves a menu or a prompt its own clicks, and closes it on a press anywhere else.
 func (c *Client) overlayMouse(event tml.Mouse) bool {
 	over := c.hit(event.X, event.Y)
-	inside := strings.HasPrefix(over, menuPrefix) || over == "menu" || strings.HasPrefix(over, "prompt") || over == "help-box"
+	inside := over == menuID || strings.HasPrefix(over, "prompt") || over == "help-box"
 	if c.menu != nil {
-		c.hover = over
-		if strings.HasPrefix(over, menuPrefix) {
-			c.menu.hover = -1
-		}
+		// The pointer marks the item it is on, as the keys do.
+		c.menu.hover = c.menuItemAt(event.X, event.Y)
 	}
 	if event.Action == input.Press && (!inside || c.help) {
 		c.closeOverlay()
@@ -156,6 +158,10 @@ func (c *Client) dragging(p *tml.Program, event tml.Mouse) bool {
 		d.pane.Mouse(event, clamp(x, d.rect.W), clamp(y, d.rect.H))
 	case dragSelect:
 		c.selecting(p, event, x, y)
+	case dragScroll:
+		if !release {
+			scrollUnder(d.pane, d.rect.H, y, d.grab)
+		}
 	case dragTab:
 		return c.movingTab(event)
 	}
@@ -267,6 +273,10 @@ func (c *Client) windowMouse(p *tml.Program, event tml.Mouse) {
 	if event.Action == input.Press && !under.Active {
 		c.mux.SelectPane(c.session, pane)
 	}
+	if gutter := c.mux.Gutter(); gutter > 0 && x >= rect.W-gutter {
+		c.scrollbarMouse(pane, rect, event, y)
+		return
+	}
 	// Shift takes the pointer back from a program that asked for it.
 	if event.Mod&input.Shift == 0 && pane.Mouse(event, x, y) {
 		if event.Action == input.Press {
@@ -280,6 +290,38 @@ func (c *Client) windowMouse(p *tml.Program, event tml.Mouse) {
 	case input.Press:
 		c.press(p, pane, rect, event, x, y)
 	}
+}
+
+// scrollbarMouse handles the pointer in a pane's gutter. The left button holds the thumb where it is pressed, and
+// a press on the track brings the thumb's middle under the pointer. The wheel scrolls as it does over the pane.
+func (c *Client) scrollbarMouse(pane *mux.Pane, rect layout.Rect, event tml.Mouse, y int) {
+	if pane.Modes().AltScreen {
+		return
+	}
+	if event.Action == input.Wheel {
+		c.wheel(pane, event)
+		return
+	}
+	if event.Action != input.Press || event.Button != input.ButtonLeft {
+		return
+	}
+	info := pane.Info()
+	start, size, ok := paneBar(info.History, info.Offset, rect.H).Thumb()
+	if !ok {
+		return
+	}
+	grab := size / 2
+	if y >= start && y < start+size {
+		grab = y - start
+	}
+	c.drag = drag{kind: dragScroll, pane: pane, rect: rect, grab: grab}
+	scrollUnder(pane, rect.H, y, grab)
+}
+
+// scrollUnder scrolls a pane so that a row of its scrollbar's thumb is under a row of the bar.
+func scrollUnder(pane *mux.Pane, rows, y, grab int) {
+	info := pane.Info()
+	pane.ScrollTo(info.History - paneBar(info.History, info.Offset, rows).At(y, grab))
 }
 
 // wheel scrolls a pane's history. A full-screen program has none, so it gets arrow keys, which is what a pager and

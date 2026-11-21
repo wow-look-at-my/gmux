@@ -26,6 +26,8 @@ type Session struct {
 	cols, rows   int
 	sizes        map[int]size
 	used         time.Time
+	// gutter is the columns each pane keeps free at its right edge.
+	gutter int
 }
 
 // Window is one screenful of panes.
@@ -308,7 +310,7 @@ func (w *Window) arrange() {
 	}
 	for _, placed := range w.frame.Panes {
 		if p := w.panes[placed.ID]; p != nil && !placed.Rect.Empty() {
-			p.resize(placed.Rect.W, placed.Rect.H)
+			p.resize(max(1, placed.Rect.W-w.session.gutter), placed.Rect.H)
 		}
 	}
 }
