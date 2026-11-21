@@ -5,6 +5,7 @@ package mux
 import (
 	"strings"
 
+	"github.com/wow-look-at-my/go-containers/set"
 	"github.com/wow-look-at-my/go-tmux/vt"
 )
 
@@ -244,11 +245,11 @@ func (m *Mux) Refresh() {
 	}
 	m.mu.Unlock()
 
-	changed := map[*Session]struct{}{}
+	changed := set.New[*Session]()
 	for _, e := range entries {
 		for _, p := range e.panes {
 			if p.Refresh() {
-				changed[e.s] = struct{}{}
+				changed.Add(e.s)
 			}
 		}
 	}
@@ -261,12 +262,12 @@ func (m *Mux) Refresh() {
 		if p := e.w.panes[e.w.active]; p != nil {
 			if name := p.commandName(); name != e.w.Name {
 				e.w.Name = name
-				changed[e.s] = struct{}{}
+				changed.Add(e.s)
 			}
 		}
 	}
 	m.mu.Unlock()
-	for s := range changed {
+	for s := range changed.All() {
 		m.emit(Event{Kind: Changed, Session: s})
 	}
 }

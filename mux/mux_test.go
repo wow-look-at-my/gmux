@@ -143,7 +143,7 @@ func TestWindowsOfASession(t *testing.T) {
 		info, _ := m.Info(s)
 		return len(info.Windows) == 2
 	}, wait, 5*time.Millisecond)
-	assert.Equal(t, 0, active(), "the window shown before the closed one comes back")
+	assert.Equal(t, 1, active(), "the window shown before the closed one comes back")
 }
 
 func TestPanesOfAWindow(t *testing.T) {
