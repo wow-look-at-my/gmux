@@ -84,7 +84,8 @@ func TestWriteDoesNotAllocate(t *testing.T) {
 	}
 	for name, in := range inputs {
 		s := New(80, 24, Options{Scrollback: 100})
-		for range 5 {
+		// Warm up until the history ring is full, so a scroll recycles a line.
+		for range 150 {
 			s.Write(in)
 		}
 		allocs := testing.AllocsPerRun(20, func() { s.Write(in) })
