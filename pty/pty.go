@@ -20,6 +20,8 @@ type Command struct {
 	// Path is the program. Args are its arguments, without the program name.
 	Path string
 	Args []string
+	// Argv0 is the name the program sees itself started as. Empty is Path.
+	Argv0 string
 	// Env is the whole environment of the child.
 	Env []string
 	// Dir is the working directory. Empty keeps the caller's.
@@ -64,6 +66,9 @@ func Start(c Command) (*Pty, error) {
 	defer slave.Close()
 
 	cmd := exec.Command(c.Path, c.Args...)
+	if c.Argv0 != "" {
+		cmd.Args[0] = c.Argv0
+	}
 	cmd.Env = c.Env
 	cmd.Dir = c.Dir
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, slave
