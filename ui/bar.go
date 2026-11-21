@@ -145,6 +145,9 @@ func (c *Client) tabs(info mux.SessionInfo, room int) []chip {
 	return shown
 }
 
+// dirLeast is the room the working directory keeps on the bar while anything else can still give way.
+const dirLeast = 24
+
 // home is the user's home directory, which a path on the bar abbreviates.
 var home = os.Getenv("HOME")
 
@@ -179,8 +182,9 @@ func (c *Client) Props() tml.Props {
 		dir := shortDir(p.Dir)
 		props["dir"] = sema.StringValue(dir)
 		// The directory's column takes room ahead of the gap beside it, up to what the directory needs.
-		props["infoColumns"] = sema.StringValue("auto,1000*[1.." + strconv.Itoa(cell.Width(dir)+2) +
-			"],auto,auto,auto,*,auto,auto,auto,auto,auto,auto")
+		need := cell.Width(dir) + 2
+		props["infoColumns"] = sema.StringValue("auto,1000*[" + strconv.Itoa(min(need, dirLeast)) + ".." +
+			strconv.Itoa(need) + "],auto,auto,auto,*,auto,auto,auto,auto,auto,auto")
 		props["command"] = sema.StringValue(p.Command)
 		props["size"] = sema.StringValue(strconv.Itoa(p.Cols) + "×" + strconv.Itoa(p.Rows))
 	}
