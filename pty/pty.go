@@ -44,26 +44,12 @@ type Pty struct {
 
 // Start opens a terminal at the given size and starts the command on it, as the leader of a new session.
 func Start(c Command) (*Pty, error) {
-	master, err := os.OpenFile("/dev/ptmx", os.O_RDWR|syscall.O_NOCTTY, 0)
+	master, slave, err := Open(c.Cols, c.Rows)
 	if err != nil {
-		return nil, fmt.Errorf("pty: open the terminal multiplexer device: %w", err)
-	}
-	name, err := unlock(master)
-	if err != nil {
-		master.Close()
 		return nil, err
-	}
-	p := &Pty{master: master, done: make(chan struct{})}
-	if err := p.Resize(c.Cols, c.Rows); err != nil {
-		master.Close()
-		return nil, err
-	}
-	slave, err := os.OpenFile(name, os.O_RDWR|syscall.O_NOCTTY, 0)
-	if err != nil {
-		master.Close()
-		return nil, fmt.Errorf("pty: open %s: %w", name, err)
 	}
 	defer slave.Close()
+	p := &Pty{master: master, done: make(chan struct{})}
 
 	cmd := exec.Command(c.Path, c.Args...)
 	if c.Argv0 != "" {
@@ -81,6 +67,39 @@ func Start(c Command) (*Pty, error) {
 	p.cmd = cmd
 	go p.wait()
 	return p, nil
+}
+
+// Open opens a terminal of the given size with no program on it. master is the controlling end, and slave the end a
+// program uses as its terminal.
+func Open(cols, rows int) (master, slave *os.File, err error) {
+	master, err = os.OpenFile("/dev/ptmx", os.O_RDWR|syscall.O_NOCTTY, 0)
+	if err != nil {
+		return nil, nil, fmt.Errorf("pty: open the terminal multiplexer device: %w", err)
+	}
+	name, err := unlock(master)
+	if err == nil {
+		err = setSize(master, cols, rows)
+	}
+	if err != nil {
+		master.Close()
+		return nil, nil, err
+	}
+	slave, err = os.OpenFile(name, os.O_RDWR|syscall.O_NOCTTY, 0)
+	if err != nil {
+		master.Close()
+		return nil, nil, fmt.Errorf("pty: open %s: %w", name, err)
+	}
+	return master, slave, nil
+}
+
+// setSize tells a terminal its size through its controlling end.
+func setSize(master *os.File, cols, rows int) error {
+	ws := &unix.Winsize{Col: uint16(max(1, cols)), Row: uint16(max(1, rows))}
+	err := control(master, func(fd int) error { return unix.IoctlSetWinsize(fd, unix.TIOCSWINSZ, ws) })
+	if err != nil {
+		return fmt.Errorf("pty: set the terminal size: %w", err)
+	}
+	return nil
 }
 
 // unlock makes the other end of the terminal openable and reports its path.
@@ -141,14 +160,7 @@ func (p *Pty) Read(b []byte) (int, error) {
 func (p *Pty) Write(b []byte) (int, error) { return p.master.Write(b) }
 
 // Resize tells the terminal its size, and the kernel tells the child.
-func (p *Pty) Resize(cols, rows int) error {
-	ws := &unix.Winsize{Col: uint16(max(1, cols)), Row: uint16(max(1, rows))}
-	err := control(p.master, func(fd int) error { return unix.IoctlSetWinsize(fd, unix.TIOCSWINSZ, ws) })
-	if err != nil {
-		return fmt.Errorf("pty: set the terminal size: %w", err)
-	}
-	return nil
-}
+func (p *Pty) Resize(cols, rows int) error { return setSize(p.master, cols, rows) }
 
 // Pid is the child's process id.
 func (p *Pty) Pid() int { return p.cmd.Process.Pid }
