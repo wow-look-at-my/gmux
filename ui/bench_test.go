@@ -45,8 +45,8 @@ func BenchmarkFrame(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		if _, err := client.View().Draw(client.Props(), width, height); err != nil {
-			b.Fatal(err)
-		}
+		_, err := client.View().Draw(client.Props(), width, height)
+		require.NoError(b, err)
+
 	}
 }

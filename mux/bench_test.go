@@ -34,9 +34,8 @@ func BenchmarkPaneOutput(b *testing.B) {
 		require.NoError(b, err)
 		deadline := time.Now().Add(time.Minute)
 		for !m.Empty() {
-			if time.Now().After(deadline) {
-				b.Fatal("the program never finished")
-			}
+			require.False(b, time.Now().After(deadline))
+
 			time.Sleep(time.Millisecond)
 		}
 	}
