@@ -100,7 +100,7 @@ tests:
 	  outputs:
 		stdout:
 			- " demo  0:sh  1:sh "
-			- "CPU"
+			- "MEM "
 
 	- desc: a right click on a tab opens its menu, and a click on a tab shows its window
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && tab_menu_and_switch'

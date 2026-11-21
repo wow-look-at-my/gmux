@@ -11,6 +11,19 @@ inner_start() {
 
 inner_stop() { "$work/gmux" -S "$work/inner.sock" kill-server >/dev/null 2>&1; }
 
+# gone waits until the active pane of a session no longer holds a text.
+gone() {
+	tries=0
+	while gmux capture-pane -t "$1" | grep -q -- "$2"; do
+		tries=$((tries + 1))
+		if [ "$tries" -gt 100 ]; then
+			echo "the pane of $1 still shows $2" >&2
+			return 1
+		fi
+		sleep 0.1
+	done
+}
+
 # pointer types one press and release at a cell of the window row. The cell counts from one, as a report does.
 pointer() {
 	gmux send-keys -l -t outer "$(printf '\033[<%d;%d;23M\033[<%d;%d;23m' "$1" "$2" "$1" "$2")"
