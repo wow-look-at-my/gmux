@@ -1,3 +1,7 @@
+github.com/clipperhouse/displaywidth v0.11.0 git:b6da6e784d7796398607efa9883b4d9f6e7be509
+github.com/clipperhouse/displaywidth v0.11.0/go.mod git:b6da6e784d7796398607efa9883b4d9f6e7be509
+github.com/clipperhouse/uax29/v2 v2.7.0 git:b03477d1fbba89df95a6b55da0a222b2e2228610
+github.com/clipperhouse/uax29/v2 v2.7.0/go.mod git:b03477d1fbba89df95a6b55da0a222b2e2228610
 github.com/stretchr/testify v1.12.1 git:959dbdacf1533e155162811ea90c90117a420463
 github.com/stretchr/testify v1.12.1/go.mod git:959dbdacf1533e155162811ea90c90117a420463
 go.yaml.in/yaml/v3 v3.0.5 git:e16c7af9361b241fa02d91582fb59ce4954d8afc
