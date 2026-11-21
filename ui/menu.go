@@ -7,7 +7,6 @@ import (
 
 	"github.com/wow-look-at-my/go-tmux/mux"
 	"github.com/wow-look-at-my/tml"
-	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
