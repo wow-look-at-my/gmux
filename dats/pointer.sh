@@ -98,7 +98,7 @@ item() {
 }
 
 # menu opens the menu at the left end of the window row and clicks one of its items.
-menu() { click 0 "$windows_row" "☰" && shows outer "Split right" >/dev/null && item "$1"; }
+menu() { click 0 "$windows_row" "≡" && shows outer "Split right" >/dev/null && item "$1"; }
 
 # close_tab clicks the close cell of the tab with a label.
 close_tab() {
@@ -113,7 +113,7 @@ click_adds_window() {
 
 # The window row is the first row of what gmux draws, and the information row is the last.
 bars_at_both_ends() {
-	gmux capture-pane -t outer | sed -n '1p' | grep -c "☰  demo  1:sh ×  +" | sed 's/^/top: /'
+	gmux capture-pane -t outer | sed -n '1p' | grep -c "≡  demo  1:sh ×  +" | sed 's/^/top: /'
 	row "$info_row" | grep -c "MEM " | sed 's/^/bottom: /'
 }
 

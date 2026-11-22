@@ -81,7 +81,7 @@
 					<Stack orientation="horizontal">
 						<Hit id="main-menu" action="main-menu" style="{menuLook}"
 							tooltip="Menu: split the window, zoom or close a pane, sessions, keys">
-							<Text>☰</Text>
+							<Text>≡</Text>
 						</Hit>
 						<Hit id="session" action="sessions" style="chip.session"
 							tooltip="This session. Click for the list of sessions">

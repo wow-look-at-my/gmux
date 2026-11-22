@@ -31,10 +31,10 @@ gmux kill-server
 The window row is at the top of the screen. It holds the menu, the session, a tab for each window, and the cells that act on your view. The information row is at the bottom. It holds the working directory, the running program, the pane size, the host's load and the clock.
 
 ```text
- ☰  work  1:sh ×  2:logs ×  +                                  □  ─
+ ≡  work  1:sh ×  2:logs ×  +                                  □  ─
 ```
 
-- `☰` opens the menu: new window, split right, split down, zoom, close the pane, sessions, detach, keys. The bars keep their clicks. The menu works when the program in a pane takes the mouse for itself.
+- `≡` opens the menu: new window, split right, split down, zoom, close the pane, sessions, detach, keys. The bars keep their clicks. The menu works when the program in a pane takes the mouse for itself.
 - `×` on a tab closes that tab's window. `+` adds a window.
 - `─` detaches: gmux leaves the terminal, and the session and its programs keep running until `gmux attach`.
 - `□` zooms the pane in focus to the whole window, and `❐` brings the other panes back. The cell shows only when the window has more than one pane.

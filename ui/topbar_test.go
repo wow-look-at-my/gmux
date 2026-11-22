@@ -19,7 +19,7 @@ func TestTheWindowRowIsOverTheWindowAndTheInformationRowUnderIt(t *testing.T) {
 		"the first row of the window is not the row under the window row")
 	lines := r.lines()
 
-	assert.True(t, strings.HasPrefix(lines[0], " ☰  main  1:sh × "), "the first row is the window row: %q", lines[0])
+	assert.True(t, strings.HasPrefix(lines[0], " ≡  main  1:sh × "), "the first row is the window row: %q", lines[0])
 	assert.Contains(t, lines[0], " + ")
 	assert.Contains(t, lines[11], "CPU", "the last row is the information row")
 	assert.NotContains(t, lines[11], "1:sh")

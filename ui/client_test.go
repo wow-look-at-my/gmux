@@ -20,7 +20,7 @@ func TestTheScreenIsTheWindowAndTwoBars(t *testing.T) {
 	r.shows("hello-42")
 
 	windows, info := r.bars()
-	assert.True(t, strings.HasPrefix(windows, " ☰  main  1:sh ×  + "), windows)
+	assert.True(t, strings.HasPrefix(windows, " ≡  main  1:sh ×  + "), windows)
 	assert.True(t, strings.HasSuffix(strings.TrimRight(windows, " "), "  ─"), windows)
 	assert.Equal(t, windows, r.lines()[0], "the window row is the first row of the screen")
 	assert.Equal(t, info, r.lines()[19], "the information row is the last")
