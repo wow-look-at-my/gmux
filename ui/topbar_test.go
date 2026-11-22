@@ -3,6 +3,7 @@ package ui
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,8 +45,13 @@ func TestEachTabClosesItsOwnWindow(t *testing.T) {
 	assert.Contains(t, windows, " 1:sh ×  2:logs ×  3:edit × ")
 	assert.Equal(t, 3, strings.Count(windows, "×"), "one close cell for each tab, and no other: %q", windows)
 
-	r.clickOn(closePrefix + "1")
-	r.eventually(func() bool { return r.windows() == "[sh] edit" }, "the window of the tab never closed")
+	x, y := r.at(closePrefix + "1")
+	r.mouse(input.Press, input.ButtonLeft, x, y)
+	assert.Equal(t, closePrefix+"1", r.client.hover, "the press is on the close cell, not on its tab")
+	assert.Equal(t, "×", r.frame().At(x, y).Text)
+	r.mouse(input.Release, input.ButtonLeft, x, y)
+	require.Eventually(t, func() bool { return r.windows() == "[sh] edit" }, wait, 5*time.Millisecond,
+		"the window of the tab never closed: %s", r.windows())
 	windows, _ = r.bars()
 	assert.Equal(t, 2, strings.Count(windows, "×"))
 
