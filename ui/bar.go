@@ -18,6 +18,8 @@ type chip struct {
 	id, action, label, look, tip string
 	// close is the cell that closes a tab's window. A chip that is not a tab has none.
 	close closer
+	// mark is what a tab draws in the cell before its close cell, or nothing for a blank there.
+	mark string
 }
 
 // closer is the cell at the end of a tab that closes the tab's window.
@@ -38,6 +40,8 @@ func (c chip) record() map[string]sema.Value {
 		fields["closeAction"] = sema.StringValue(c.close.action)
 		fields["closeLook"] = sema.StringValue(c.close.look)
 		fields["closeTip"] = sema.StringValue(c.close.tip)
+		fields["mark"] = sema.StringValue(c.mark)
+		fields["blank"] = sema.BoolValue(c.mark == "")
 	}
 	return fields
 }
@@ -156,7 +160,7 @@ func (c *Client) tabs(info mux.SessionInfo, room int) []chip {
 		n, number := strconv.Itoa(i), strconv.Itoa(windowNumber(w.Index))
 		id, closeID := tabPrefix+n, closePrefix+n
 		all = append(all, chip{
-			id: id, action: actSelect + n, label: tabLabel(w), look: c.look(id, style),
+			id: id, action: actSelect + n, label: tabLabel(w), mark: tabMark(w), look: c.look(id, style),
 			tip: "Window " + number + ". Click to show it, drag to move it, click it again to rename it",
 			close: closer{
 				id: closeID, action: actKill + n, look: c.look(closeID, "close"),

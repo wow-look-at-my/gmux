@@ -191,7 +191,7 @@ func (c *Client) windowList(x, y int) {
 	info, _ := c.mux.Info(c.session)
 	items := make([]menuItem, 0, len(info.Windows))
 	for _, w := range info.Windows {
-		items = append(items, menuItem{tabLabel(w), actSelect + strconv.Itoa(w.Index)})
+		items = append(items, menuItem{tabLabel(w) + tabMark(w), actSelect + strconv.Itoa(w.Index)})
 	}
 	c.openMenu("windows", x, y, items)
 }

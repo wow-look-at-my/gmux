@@ -49,10 +49,15 @@
 		<Property name="closeAction" type="string" default=""/>
 		<Property name="closeLook" type="string" default="close"/>
 		<Property name="closeTip" type="string" default=""/>
+		<Property name="mark" type="string" default=""/>
+		<Property name="blank" type="bool" default="false"/>
 		<Template>
 			<Hit id="{id}" action="{action}" style="{look}" tooltip="{tip}">
-				<Stack orientation="horizontal" gap="1">
+				<Stack orientation="horizontal">
 					<Text overflow="clip">{label}</Text>
+					<!-- The cell before the close cell holds the tab's mark, so a mark never moves the close cell. -->
+					<Text if="{mark}">{mark}</Text>
+					<Spacer width="1" if="{blank}"/>
 					<Hit id="{closeId}" action="{closeAction}" style="{closeLook}" tooltip="{closeTip}" if="{closeAction}">
 						<Text>×</Text>
 					</Hit>
