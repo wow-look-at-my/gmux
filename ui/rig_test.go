@@ -70,6 +70,7 @@ func (r *rig) send(msg tml.Msg) {
 	switch msg.(type) {
 	case tml.Key, tml.Mouse, tml.Paste:
 		if r.client.Update(r.program, msg) {
+			r.client.View().UI().Observe(msg)
 			return
 		}
 		for _, event := range r.client.View().UI().Update(msg) {
@@ -90,10 +91,28 @@ func (r *rig) frame() *cell.Buffer {
 
 func (r *rig) lines() []string { return r.frame().Lines() }
 
-// bars is the text of the rows under the window.
+// bars is the text of the window row over the window, and of the information row under it.
 func (r *rig) bars() (windows, info string) {
 	lines := r.lines()
-	return lines[r.height-2], lines[r.height-1]
+	return lines[0], lines[r.height-1]
+}
+
+// window is the rows between the bars.
+func (r *rig) window() []string { return r.lines()[topRows : r.height-bottomRows] }
+
+// tooltip rests the pointer on an element until its tooltip shows, and gives the text and the rows of the frame.
+func (r *rig) tooltip(id string) (string, []string) {
+	r.t.Helper()
+	x, y := r.at(id)
+	r.mouse(input.Motion, input.ButtonNone, x, y)
+	ui := r.client.View().UI()
+	dwell, waits := ui.Dwell()
+	require.True(r.t, waits, "%q has no tooltip to wait for", id)
+	require.True(r.t, ui.ShowTooltip(dwell))
+	lines := r.lines()
+	tip, shown := ui.Tooltip()
+	require.True(r.t, shown)
+	return tip.Text, lines
 }
 
 func (r *rig) keys(names ...string) {
@@ -150,7 +169,7 @@ func (r *rig) clickItem(n int) {
 func (r *rig) shows(text string) {
 	r.t.Helper()
 	require.Eventually(r.t, func() bool {
-		return strings.Contains(strings.Join(r.lines()[:r.height-2], "\n"), text)
+		return strings.Contains(strings.Join(r.window(), "\n"), text)
 	}, wait, 5*time.Millisecond, "the window never showed %q; it shows:\n%s", text, strings.Join(r.lines(), "\n"))
 }
 

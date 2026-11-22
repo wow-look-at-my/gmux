@@ -21,6 +21,7 @@
 	<Property name="gpu" type="string" default=""/>
 	<Property name="clock" type="string" default=""/>
 
+	<Property name="menuLook" type="string" default="chip"/>
 	<Property name="menuOpen" type="bool" default="false"/>
 	<Property name="menuTitle" type="string" default=""/>
 	<Property name="menuX" type="int" default="0"/>
@@ -36,15 +37,26 @@
 	<Property name="helpOpen" type="bool" default="false"/>
 	<Property name="help" type="record[]" default=""/>
 
-	<!-- One clickable cell of a bar: a window tab, or a button. Hit is what makes it answer the pointer. -->
+	<!-- One clickable cell of the window row: a button, or a window tab with the cell that closes its window. Hit is
+	     what makes each answer the pointer. A cell with no close action has no close cell. -->
 	<DataTemplate name="Chip">
 		<Property name="id" type="string" required="true"/>
 		<Property name="action" type="string" required="true"/>
 		<Property name="label" type="string" required="true"/>
 		<Property name="look" type="string" required="true"/>
+		<Property name="tip" type="string" default=""/>
+		<Property name="closeId" type="string" default=""/>
+		<Property name="closeAction" type="string" default=""/>
+		<Property name="closeLook" type="string" default="close"/>
+		<Property name="closeTip" type="string" default=""/>
 		<Template>
-			<Hit id="{id}" action="{action}" style="{look}">
-				<Text overflow="clip">{label}</Text>
+			<Hit id="{id}" action="{action}" style="{look}" tooltip="{tip}">
+				<Stack orientation="horizontal" gap="1">
+					<Text overflow="clip">{label}</Text>
+					<Hit id="{closeId}" action="{closeAction}" style="{closeLook}" tooltip="{closeTip}" if="{closeAction}">
+						<Text>×</Text>
+					</Hit>
+				</Stack>
 			</Hit>
 		</Template>
 	</DataTemplate>
@@ -62,12 +74,17 @@
 
 	<Template>
 		<Canvas>
-			<Grid id="screen" columns="*" rows="*,1,1">
-				<Panes id="panes" Grid.row="0"/>
-
-				<Hit id="bar-windows" Grid.row="1" style="bar">
+			<Grid id="screen" columns="*" rows="1,*,1">
+				<!-- The window row is over the window: the menu, the session, a tab for each window, and what the
+				     client itself does. A click here never goes to the program in a pane. -->
+				<Hit id="bar-windows" Grid.row="0" style="bar">
 					<Stack orientation="horizontal">
-						<Hit id="session" action="sessions" style="chip.session">
+						<Hit id="main-menu" action="main-menu" style="{menuLook}"
+							tooltip="Menu: split the window, zoom or close a pane, sessions, keys">
+							<Text>☰</Text>
+						</Hit>
+						<Hit id="session" action="sessions" style="chip.session"
+							tooltip="This session. Click for the list of sessions">
 							<Text overflow="clip">{session}</Text>
 						</Hit>
 						<Stack orientation="horizontal" itemsSource="{tabs}" itemTemplate="Chip"/>
@@ -76,13 +93,16 @@
 					</Stack>
 				</Hit>
 
+				<Panes id="panes" Grid.row="1"/>
+
 				<!-- The columns give way in the order collapse names them, so a narrow terminal keeps the directory
 				     and the clock longest. The directory's column is cut to the room there is. -->
 				<Grid id="bar-info" Grid.row="2" style="bar" columns="{infoColumns}" collapse="10,9,8,3,2,7,6,11">
 					<Box Grid.column="0" style="chip.mode" if="{mode}">
 						<Text overflow="clip">{mode}</Text>
 					</Box>
-					<Hit id="dir" action="copy-dir" Grid.column="1" style="chip" if="{dir}">
+					<Hit id="dir" action="copy-dir" Grid.column="1" style="chip" if="{dir}"
+						tooltip="The pane's directory. Click to copy it">
 						<Text overflow="path">{dir}</Text>
 					</Hit>
 					<Box Grid.column="2" style="chip" if="{command}">
@@ -94,38 +114,44 @@
 					<Box Grid.column="4" style="chip.note" if="{note}">
 						<Text overflow="clip">{note}</Text>
 					</Box>
-					<Hit id="stat-cpu" action="stats" Grid.column="6" style="chip" if="{cpu}">
+					<Hit id="stat-cpu" action="stats" Grid.column="6" style="chip" if="{cpu}"
+						tooltip="Processor use of the whole host. Click for more detail">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">CPU</Text>
 							<Sparkline values="{cpuHistory}" max="100" color="{theme.accent}"/>
 							<Text overflow="clip">{cpu}</Text>
 						</Stack>
 					</Hit>
-					<Hit id="stat-mem" action="stats" Grid.column="7" style="chip" if="{mem}">
+					<Hit id="stat-mem" action="stats" Grid.column="7" style="chip" if="{mem}"
+						tooltip="Memory in use. Click for more detail">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">MEM</Text>
 							<Text overflow="clip">{mem}</Text>
 						</Stack>
 					</Hit>
-					<Hit id="stat-gpu" action="stats" Grid.column="8" style="chip" if="{gpu}">
+					<Hit id="stat-gpu" action="stats" Grid.column="8" style="chip" if="{gpu}"
+						tooltip="Graphics processor use. Click for more detail">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">GPU</Text>
 							<Text overflow="clip">{gpu}</Text>
 						</Stack>
 					</Hit>
-					<Hit id="stat-net" action="stats" Grid.column="9" style="chip" if="{net}">
+					<Hit id="stat-net" action="stats" Grid.column="9" style="chip" if="{net}"
+						tooltip="Network traffic, down and up. Click for more detail">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">NET</Text>
 							<Text overflow="clip">{net}</Text>
 						</Stack>
 					</Hit>
-					<Hit id="stat-load" action="stats" Grid.column="10" style="chip" if="{load}">
+					<Hit id="stat-load" action="stats" Grid.column="10" style="chip" if="{load}"
+						tooltip="Load average. Click for more detail">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">LOAD</Text>
 							<Text overflow="clip">{load}</Text>
 						</Stack>
 					</Hit>
-					<Hit id="clock" action="clock" Grid.column="11" style="chip" if="{clock}">
+					<Hit id="clock" action="clock" Grid.column="11" style="chip" if="{clock}"
+						tooltip="Click to show the date">
 						<Text overflow="clip">{clock}</Text>
 					</Hit>
 				</Grid>

@@ -110,6 +110,9 @@ func (c *Client) act(p *tml.Program, action string) {
 	s := c.session
 	// A menu opens under the bar element that asked for it, or in the middle of the window.
 	x, y := c.width/3, c.height/3
+	if c.anchored {
+		x, y = c.anchorX, c.anchorY
+	}
 	switch name {
 	case "new-window":
 		c.report(p, c.mux.NewWindow(s, mux.Spawn{}))
@@ -181,6 +184,8 @@ func (c *Client) actClient(p *tml.Program, name, arg string, x, y int) {
 			p.Copy(dir)
 			c.say(p, "copied "+shortDir(dir))
 		}
+	case "main-menu":
+		c.mainMenu(x, y)
 	case "sessions":
 		c.sessionMenu(x, y)
 	case "switch-session":

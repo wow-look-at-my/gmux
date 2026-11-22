@@ -191,7 +191,7 @@ func (c *Client) event(p *tml.Program, event tml.Event) {
 	case tml.Scrolled:
 		// The wheel over the window row turns through the windows.
 		if event.ID == "session" || event.ID == idMore || event.ID == "bar-windows" ||
-			strings.HasPrefix(event.ID, tabPrefix) {
+			strings.HasPrefix(event.ID, tabPrefix) || strings.HasPrefix(event.ID, closePrefix) {
 			c.mux.StepWindow(c.session, event.Delta)
 		}
 	case tml.Menu:
@@ -218,6 +218,11 @@ func (c *Client) activated(p *tml.Program, event tml.Event) {
 	if event.Action == "" || c.overlay() != "" {
 		return
 	}
+	// A menu the action opens goes under the element that was clicked.
+	if target, ok := c.view.UI().Target(event.ID); ok {
+		c.anchorX, c.anchorY, c.anchored = target.Rect.X, target.Rect.Y+target.Rect.H, true
+		defer func() { c.anchored = false }()
+	}
 	c.act(p, event.Action)
 }
 
@@ -227,7 +232,8 @@ func (c *Client) contextMenu(event tml.Event) {
 	if !ok {
 		return
 	}
-	x, y := target.Rect.X+max(0, event.X), target.Rect.Y+max(0, event.Y)
+	// The menu opens under the element, so the element stays in view.
+	x, y := target.Rect.X+max(0, event.X), target.Rect.Y+target.Rect.H
 	switch {
 	case strings.HasPrefix(event.ID, tabPrefix):
 		index, err := strconv.Atoi(strings.TrimPrefix(event.ID, tabPrefix))
@@ -238,5 +244,7 @@ func (c *Client) contextMenu(event tml.Event) {
 		c.sessionMenu(x, y)
 	case event.ID == idMore:
 		c.windowList(x, y)
+	case event.ID == idMainMenu:
+		c.mainMenu(x, y)
 	}
 }

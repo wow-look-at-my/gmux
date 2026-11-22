@@ -78,13 +78,13 @@ func (c *Client) hit(x, y int) string {
 // mouse routes one pointer event. It reports true for an event the focus ring must not see.
 func (c *Client) mouse(p *tml.Program, event tml.Mouse) bool {
 	if c.drag.kind != dragNone && event.Action != input.Press {
-		return c.dragging(p, event)
+		return c.dragging(p, inWindow(event))
 	}
 	c.drag = drag{}
 	if c.overlay() != "" {
 		return c.overlayMouse(event)
 	}
-	if event.Y >= c.height-barRows {
+	if event.Y < topRows || event.Y >= c.height-bottomRows {
 		return c.barMouse(p, event)
 	}
 	if c.hover == "" && event.Action == input.Motion && event.Button == input.ButtonNone {
@@ -92,8 +92,14 @@ func (c *Client) mouse(p *tml.Program, event tml.Mouse) bool {
 		p.Unchanged()
 	}
 	c.hover = ""
-	c.windowMouse(p, event)
+	c.windowMouse(p, inWindow(event))
 	return true
+}
+
+// inWindow is a pointer event with its row counted from the top of the window area, as the panes are.
+func inWindow(event tml.Mouse) tml.Mouse {
+	event.Y -= topRows
+	return event
 }
 
 // overlayMouse leaves a menu or a prompt its own clicks, and closes it on a press anywhere else.
@@ -248,7 +254,7 @@ func (c *Client) tabAt(x int) (int, bool) {
 	return best, found
 }
 
-// windowMouse handles the pointer in the window area.
+// windowMouse handles the pointer in the window area. The event's row counts from the top of that area.
 func (c *Client) windowMouse(p *tml.Program, event tml.Mouse) {
 	view := c.mux.View(c.session)
 	if event.Action == input.Press && event.Button == input.ButtonLeft {
@@ -342,7 +348,8 @@ func (c *Client) wheel(pane *mux.Pane, event tml.Mouse) {
 	}
 }
 
-// press handles a button going down on a pane whose program does not take the pointer.
+// press handles a button going down on a pane whose program does not take the pointer. The event's row counts
+// from the top of the window area.
 func (c *Client) press(p *tml.Program, pane *mux.Pane, rect layout.Rect, event tml.Mouse, x, y int) {
 	switch event.Button {
 	case input.ButtonLeft:
@@ -360,6 +367,6 @@ func (c *Client) press(p *tml.Program, pane *mux.Pane, rect layout.Rect, event t
 			pane.Paste(c.clip)
 		}
 	case input.ButtonRight:
-		c.paneMenu(event.X, event.Y)
+		c.paneMenu(event.X, event.Y+topRows)
 	}
 }

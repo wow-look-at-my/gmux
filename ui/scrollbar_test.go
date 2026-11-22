@@ -15,7 +15,7 @@ import (
 // the pane's scrollbar is drawn.
 func (r *rig) gutterColumn() string {
 	var column strings.Builder
-	for _, line := range r.lines()[:r.height-barRows] {
+	for _, line := range r.window() {
 		cells := []rune(line)
 		column.WriteRune(cells[r.width-1])
 	}
@@ -48,15 +48,15 @@ func TestThePointerMovesAPanesScrollbar(t *testing.T) {
 	bar := r.width - 1
 
 	// A press on the track brings the thumb under the pointer.
-	r.mouse(input.Press, input.ButtonLeft, bar, 0)
+	r.mouse(input.Press, input.ButtonLeft, bar, topRows)
 	assert.Equal(t, 50, pane.Info().Offset)
 	// The held thumb follows the pointer, past the pane's edge too.
-	r.mouse(input.Motion, input.ButtonLeft, bar-20, 5)
+	r.mouse(input.Motion, input.ButtonLeft, bar-20, topRows+5)
 	assert.Equal(t, 22, pane.Info().Offset)
 	r.mouse(input.Motion, input.ButtonLeft, bar, 30)
 	assert.Zero(t, pane.Info().Offset)
 	r.mouse(input.Release, input.ButtonLeft, bar, 30)
-	r.mouse(input.Motion, input.ButtonNone, bar, 0)
+	r.mouse(input.Motion, input.ButtonNone, bar, topRows)
 	assert.Zero(t, pane.Info().Offset, "a pointer that holds nothing moves nothing")
 
 	// The wheel over the bar scrolls as it does over the pane.
@@ -77,7 +77,7 @@ func TestAFullScreenProgramHasNoScrollbar(t *testing.T) {
 	r.reader(`printf '\033[?1049h'; `)
 	r.eventually(func() bool { return pane.Modes().AltScreen }, "never full screen")
 	assert.Equal(t, strings.Repeat(" ", 10), r.gutterColumn())
-	r.mouse(input.Press, input.ButtonLeft, r.width-1, 0)
-	r.mouse(input.Release, input.ButtonLeft, r.width-1, 0)
+	r.mouse(input.Press, input.ButtonLeft, r.width-1, topRows)
+	r.mouse(input.Release, input.ButtonLeft, r.width-1, topRows)
 	assert.Zero(t, pane.Info().Offset)
 }
