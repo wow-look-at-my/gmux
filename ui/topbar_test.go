@@ -77,6 +77,27 @@ func TestTheCloseCellOfTheTabOnScreenClosesIt(t *testing.T) {
 	assert.NotContains(t, r.windows(), "edit")
 }
 
+// A window that prints or rings while nobody looks marks its tab, and the mark takes no room. A cell of the row
+// that the pointer aims at therefore stays where it is.
+func TestAMarkOnATabMovesNoCell(t *testing.T) {
+	plain := mux.WindowInfo{Index: 1, Name: "logs"}
+	busy, rang := plain, plain
+	busy.Activity, rang.Bell = true, true
+	assert.Equal(t, "2:logs", tabLabel(plain))
+	assert.Equal(t, "2#logs", tabLabel(busy))
+	assert.Equal(t, "2!logs", tabLabel(rang))
+
+	r := newRig(t, 100, 12)
+	require.NoError(t, r.mux.NewWindow(r.session, mux.Spawn{Command: []string{"/bin/sh", "-c", "sleep 0.3; echo late; sleep 600"}}))
+	r.mux.SelectWindow(r.session, 0)
+	before, _ := r.bars()
+	require.Contains(t, before, " 2:sh × ")
+	r.eventually(func() bool { windows, _ := r.bars(); return strings.Contains(windows, " 2#sh × ") },
+		"the window that printed never marked its tab")
+	after, _ := r.bars()
+	assert.Equal(t, strings.Index(before, "+"), strings.Index(after, "+"), "the cells after the tab did not move")
+}
+
 // A click on a tab, a click on another cell, and a click on the tab again are not a second click on the tab.
 func TestAPressElsewhereEndsTheWaitForASecondClick(t *testing.T) {
 	r := newRig(t, 100, 12)
