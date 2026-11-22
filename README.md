@@ -7,8 +7,8 @@ The interface is [tml](https://github.com/wow-look-at-my/tml). The host readings
 ## Use
 
 ```bash
-gmux                      # start a session and attach
-gmux new -s work          # start a session with a name
+gmux                      # start a session and attach: it takes the directory's name
+gmux new -s work          # start a session with a name of your own
 gmux attach -t work       # attach to a session that runs
 gmux ls                   # list the sessions
 gmux kill-session -t work
@@ -19,7 +19,7 @@ gmux kill-server
 
 | Key | Does |
 | --- | --- |
-| `c` `n` `p` `0-9` | new window, next, previous, by number |
+| `c` `n` `p` `1`-`9` | new window, next, previous, by number |
 | `%` `"` | split right, split down |
 | arrows | focus the pane on that side |
 | `z` `x` | zoom the pane, close the pane |
@@ -36,7 +36,9 @@ The upper row holds the session, the window tabs and the buttons. The lower row 
 - Click the working directory to copy it. Click a reading or the clock for its longer form.
 - Drag the line between a pair of panes to resize them. Click a pane to focus it.
 - Drag in a pane to select text. The selection is copied when the button comes up, and the middle button pastes it.
-- The wheel in a pane scrolls its history. A program that asks for the mouse gets it, and shift takes it back.
+- The wheel in a pane scrolls its history, and so do page up and page down. A pane with history shows a scrollbar at its right edge: drag the thumb, or click the track.
+- A program that asks for the mouse gets it, and shift takes it back.
+- A narrower pane rewraps its text, and a wider one joins the lines again.
 
 ## Scripting
 

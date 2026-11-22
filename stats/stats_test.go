@@ -11,7 +11,7 @@ import (
 
 func snapshot() *client.Snapshot {
 	return &client.Snapshot{Metrics: map[string]client.Metric{
-		client.CPUPercent:                  {Value: 12.4, History: []float64{40, 5.25}},
+		client.CPUPercent:                  {Value: 16 * 12.4, History: []float64{16 * 40, 16 * 5.25}},
 		client.CPUCount:                    {Value: 16},
 		client.RAMUsed:                     {Value: 3.2 * (1 << 30)},
 		client.RAMTotal:                    {Value: 16 * (1 << 30)},
@@ -36,7 +36,7 @@ func TestFormatWritesEachReadingShort(t *testing.T) {
 
 func TestFormatInDetail(t *testing.T) {
 	bar := Format(snapshot(), true)
-	assert.Equal(t, "12% of 16", bar.CPU)
+	assert.Equal(t, "12% of 16 cores", bar.CPU)
 	assert.Equal(t, "3.2G/16G swap 512M", bar.Mem)
 	assert.Equal(t, "0.52 0.40 0.31", bar.Load)
 	assert.Equal(t, "88% 6.0G/24G", bar.GPU)
@@ -57,6 +57,19 @@ func TestFormatLeavesOutWhatTheHostDoesNotOffer(t *testing.T) {
 	assert.Empty(t, bar.Net)
 	assert.Equal(t, "3%", bar.GPU)
 	assert.Equal(t, "2.00", bar.Load)
+}
+
+func TestTheProcessorLoadIsAShareOfTheWholeHost(t *testing.T) {
+	busy := &client.Snapshot{Metrics: map[string]client.Metric{
+		client.CPUPercent: {Value: 1500, History: []float64{1600, 0}},
+		client.CPUCount:   {Value: 16},
+	}}
+	bar := Format(busy, false)
+	assert.Equal(t, "94%", bar.CPU)
+	assert.Equal(t, []string{"0.0", "100.0", "93.8"}, bar.CPUHistory, "the graph's scale ends at a hundred")
+
+	uncounted := &client.Snapshot{Metrics: map[string]client.Metric{client.CPUPercent: {Value: 1500}}}
+	assert.Empty(t, Format(uncounted, false).CPU, "a load with no processor count has no scale")
 }
 
 func TestBytes(t *testing.T) {

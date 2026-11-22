@@ -39,10 +39,13 @@ type rig struct {
 	now           time.Time
 }
 
-func newRig(t *testing.T, width, height int) *rig {
+func newRig(t *testing.T, width, height int) *rig { return newRigWith(t, width, height, 0) }
+
+// newRigWith is a rig whose panes keep a gutter of some columns, as a server's panes do.
+func newRigWith(t *testing.T, width, height, gutter int) *rig {
 	t.Helper()
 	r := &rig{t: t, width: width, height: height, now: time.Date(2026, 3, 4, 15, 4, 5, 0, time.UTC)}
-	r.mux = mux.New(mux.Config{Shell: "/bin/sh", Scrollback: 500})
+	r.mux = mux.New(mux.Config{Shell: "/bin/sh", Scrollback: 500, Gutter: gutter})
 	t.Cleanup(r.mux.Close)
 	var err error
 	r.session, err = r.mux.NewSession(mux.SessionOptions{
@@ -125,6 +128,21 @@ func (r *rig) at(id string) (x, y int) {
 func (r *rig) clickOn(id string) {
 	r.t.Helper()
 	x, y := r.at(id)
+	r.click(input.ButtonLeft, x, y)
+}
+
+// item is a cell of an item of the open menu, counted from the first.
+func (r *rig) item(n int) (x, y int) {
+	r.t.Helper()
+	r.frame()
+	target, ok := r.client.View().UI().Target(menuID)
+	require.True(r.t, ok, "no menu on screen")
+	return target.Rect.X + 2, target.Rect.Y + 1 + n
+}
+
+func (r *rig) clickItem(n int) {
+	r.t.Helper()
+	x, y := r.item(n)
 	r.click(input.ButtonLeft, x, y)
 }
 

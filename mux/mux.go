@@ -7,6 +7,7 @@ package mux
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"sync"
@@ -25,7 +26,12 @@ type Config struct {
 	Term string
 	// Socket is the server's address, exported to a pane's program as GMUX.
 	Socket string
+	// Gutter is the columns at the right edge of every pane that its terminal does not use.
+	Gutter int
 }
+
+// Gutter is the columns a pane keeps free at its right edge.
+func (m *Mux) Gutter() int { return m.cfg.Gutter }
 
 // DefaultTerm is the terminal type a pane's program is told it runs on.
 const DefaultTerm = "xterm-256color"
@@ -136,9 +142,13 @@ func (m *Mux) NewSession(opts SessionOptions) (*Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	dir := opts.Dir
+	if dir == "" {
+		dir, _ = os.Getwd()
+	}
 	name := opts.Name
 	if name == "" {
-		name = m.freeName()
+		name = m.freeName(dir)
 	} else if m.find(name) != nil {
 		return nil, fmt.Errorf("a session named %q already exists", name)
 	}
@@ -146,15 +156,11 @@ func (m *Mux) NewSession(opts SessionOptions) (*Session, error) {
 	if cols <= 0 || rows <= 0 {
 		cols, rows = DefaultCols, DefaultRows
 	}
-	dir := opts.Dir
-	if dir == "" {
-		dir, _ = os.Getwd()
-	}
 	m.nextID.session++
 	s := &Session{
 		ID: m.nextID.session, Name: name, Created: time.Now(),
 		env: opts.Env, dir: dir, cols: cols, rows: rows,
-		sizes: map[int]size{}, last: -1,
+		sizes: map[int]size{}, last: -1, gutter: m.cfg.Gutter,
 	}
 	if _, err := m.addWindow(s, opts.Spawn); err != nil {
 		return nil, err
@@ -164,14 +170,21 @@ func (m *Mux) NewSession(opts SessionOptions) (*Session, error) {
 	return s, nil
 }
 
-// freeName is the lowest number no session is named. The caller holds the lock.
-func (m *Mux) freeName() string {
-	for n := 0; ; n++ {
-		name := strconv.Itoa(n)
-		if m.find(name) == nil {
-			return name
-		}
+// fallbackName names a session whose directory has no name of its own, such as the root.
+const fallbackName = "main"
+
+// freeName names a session that was given no name, after the directory it starts in. A name in use gets a number
+// after it. The caller holds the lock.
+func (m *Mux) freeName(dir string) string {
+	base := filepath.Base(dir)
+	if base == "." || base == string(filepath.Separator) {
+		base = fallbackName
 	}
+	name := base
+	for n := 2; m.find(name) != nil; n++ {
+		name = base + "-" + strconv.Itoa(n)
+	}
+	return name
 }
 
 // find is the session with the given name. The caller holds the lock.

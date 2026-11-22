@@ -20,7 +20,7 @@ func TestTheScreenIsTheWindowAndTwoBars(t *testing.T) {
 	r.shows("hello-42")
 
 	windows, info := r.bars()
-	assert.True(t, strings.HasPrefix(windows, " main  0:sh "), windows)
+	assert.True(t, strings.HasPrefix(windows, " main  1:sh "), windows)
 	assert.True(t, strings.HasSuffix(strings.TrimRight(windows, " "), "+  ┃  ━  □  ×  ?"), windows)
 	assert.Contains(t, info, "100×18")
 	assert.Contains(t, info, "CPU")
@@ -56,8 +56,13 @@ func TestThePrefixRunsCommands(t *testing.T) {
 	assert.NotContains(t, info, "PREFIX")
 	assert.Equal(t, "sh [sh]", r.windows())
 
+	r.keys("ctrl+b", "1")
+	assert.Equal(t, "[sh] sh", r.windows(), "the digits count the windows from one")
+	r.keys("ctrl+b", "2")
+	assert.Equal(t, "sh [sh]", r.windows())
 	r.keys("ctrl+b", "0")
-	assert.Equal(t, "[sh] sh", r.windows())
+	assert.Equal(t, "sh [sh]", r.windows(), "zero is the tenth window, and there is none")
+	r.keys("ctrl+b", "1")
 	r.keys("ctrl+b", "n")
 	assert.Equal(t, "sh [sh]", r.windows())
 	// A key that repeats needs no second prefix.
@@ -93,7 +98,7 @@ func TestThePrefixRunsCommands(t *testing.T) {
 	r.keys("ctrl+b", "z")
 	assert.Len(t, r.mux.View(r.session).Panes, 1)
 	windows, _ := r.bars()
-	assert.Contains(t, windows, "0:sh Z")
+	assert.Contains(t, windows, "1:sh Z")
 	r.keys("ctrl+b", "z", "ctrl+b", "}")
 	r.send(disarmMsg{})
 	assert.NotEqual(t, 0, r.mux.View(r.session).Panes[1].Rect.X+r.mux.View(r.session).Panes[1].Rect.Y)
@@ -187,6 +192,33 @@ func TestScrollingBackThroughHistory(t *testing.T) {
 	r.mouse(input.Wheel, input.WheelUp, 5, 5)
 	r.keys("x")
 	assert.Zero(t, pane.Info().Offset)
+}
+
+func TestThePageKeysOnTheLiveScreenMoveThroughTheHistory(t *testing.T) {
+	r := newRig(t, 60, 12)
+	r.typeLine("i=0; while [ $i -lt 60 ]; do echo line-$i; i=$((i+1)); done")
+	r.shows("line-59")
+	r.reader("")
+	pane := r.mux.ActivePane(r.session)
+
+	// Page down has nowhere to go, and the program must not get it: a shell prints a tilde for it.
+	r.keys("pgdown")
+	assert.Zero(t, pane.Info().Offset)
+	r.keys("pgup")
+	assert.Equal(t, 9, pane.Info().Offset, "page up starts to scroll back")
+	r.keys("pgdown", "pgdown")
+	assert.Zero(t, pane.Info().Offset)
+	r.keys("x", "y", "z", "enter")
+	r.shows("xyz")
+	assert.NotContains(t, pane.Capture(), "~", "no page key reached the program")
+}
+
+func TestThePageKeysGoToAFullScreenProgram(t *testing.T) {
+	r := newRig(t, 60, 12)
+	r.reader(`printf '\033[?1049h'; `)
+	r.eventually(func() bool { return r.mux.ActivePane(r.session).Modes().AltScreen }, "never full screen")
+	r.keys("pgup", "pgdown", "enter")
+	r.shows("^[[5~^[[6~")
 }
 
 func TestTheWheelInAFullScreenProgramSendsArrows(t *testing.T) {

@@ -86,16 +86,18 @@ func Format(snap *client.Snapshot, detail bool) Bar {
 	if snap == nil {
 		return bar
 	}
-	if cpu, ok := snap.Metrics[client.CPUPercent]; ok {
-		bar.CPU = percent(cpu.Value)
-		if count, ok := snap.Value(client.CPUCount); ok && detail {
-			bar.CPU += " of " + strconv.Itoa(int(count))
+	cpu, ok := snap.Metrics[client.CPUPercent]
+	if count, counted := snap.Value(client.CPUCount); ok && counted && count >= 1 {
+		share := func(v float64) string { return strconv.FormatFloat(v/count, 'f', 1, 64) }
+		bar.CPU = percent(cpu.Value / count)
+		if detail {
+			bar.CPU += " of " + strconv.Itoa(int(count)) + " cores"
 		}
 		// The history arrives newest first and leaves out the current value.
 		for i := len(cpu.History) - 1; i >= 0; i-- {
-			bar.CPUHistory = append(bar.CPUHistory, strconv.FormatFloat(cpu.History[i], 'f', 1, 64))
+			bar.CPUHistory = append(bar.CPUHistory, share(cpu.History[i]))
 		}
-		bar.CPUHistory = append(bar.CPUHistory, strconv.FormatFloat(cpu.Value, 'f', 1, 64))
+		bar.CPUHistory = append(bar.CPUHistory, share(cpu.Value))
 	}
 	bar.Mem = memory(snap, detail)
 	bar.Net = network(snap)

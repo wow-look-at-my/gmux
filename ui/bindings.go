@@ -40,7 +40,7 @@ var bindings = []binding{
 	{key: "n", action: "step-window:1", help: "next window", repeat: true},
 	{key: "p", action: "step-window:-1", help: "previous window", repeat: true},
 	{key: "l", action: "last-window", help: "the window before this one"},
-	{key: "0-9", help: "window by number"},
+	{key: "1-9, 0", help: "window by number, 0 for the tenth"},
 	{key: "w", action: "windows", help: "list of windows"},
 	{key: ",", action: "rename-window", help: "rename window"},
 	{key: "&", action: "kill-window", help: "close window"},
@@ -92,7 +92,7 @@ func repeats(name string) bool {
 func (c *Client) command(p *tml.Program, key tml.Key) bool {
 	name := key.String()
 	if len(name) == 1 && name[0] >= '0' && name[0] <= '9' {
-		c.act(p, actSelect+name)
+		c.act(p, actSelect+strconv.Itoa(numberedWindow(int(name[0]-'0'))))
 		return false
 	}
 	for _, b := range bindings {

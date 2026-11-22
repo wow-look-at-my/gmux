@@ -75,6 +75,7 @@ func (c *Client) key(p *tml.Program, key tml.Key) bool {
 		c.closeOverlay()
 		return true
 	}
+	hadPrefix := c.prefix
 	if c.prefix {
 		// A prefix kept on for a repeat only takes a key that repeats. Any other key is typed as usual.
 		repeating := c.cancelArmed != nil
@@ -97,7 +98,26 @@ func (c *Client) key(p *tml.Program, key tml.Key) bool {
 	if pane.Info().Offset > 0 && c.scrollKey(pane, name) {
 		return true
 	}
-	pane.Key(key)
+	if c.pageKey(pane, name) {
+		return true
+	}
+	if !pane.Key(key) && !hadPrefix {
+		// A typed key changes nothing the client draws. What the program answers is pane output, with a frame of its own.
+		p.Unchanged()
+	}
+	return true
+}
+
+// pageKey keeps the page keys of a pane that shows its live screen. They move
+// through the history, so page down has nothing to do there, and a shell that
+// got it would print a tilde.
+func (c *Client) pageKey(pane *mux.Pane, name string) bool {
+	if name != "pgup" && name != "pgdown" || pane.Modes().AltScreen {
+		return false
+	}
+	if name == "pgup" {
+		pane.Scroll(max(1, pane.Info().Rows-1))
+	}
 	return true
 }
 
@@ -152,13 +172,7 @@ func (c *Client) menuKey(p *tml.Program, name string) {
 	case "down", "j", "tab":
 		m.hover = (m.hover + 1) % len(m.items)
 	case "enter", "space":
-		if m.hover >= 0 && m.hover < len(m.items) {
-			action := m.items[m.hover].action
-			c.closeOverlay()
-			c.act(p, action)
-			return
-		}
-		c.closeOverlay()
+		c.pick(p, m.hover)
 	default:
 		c.closeOverlay()
 	}
@@ -194,14 +208,16 @@ func (c *Client) activated(p *tml.Program, event tml.Event) {
 		}
 		return
 	}
-	if event.Action == "" {
+	if event.ID == menuID {
+		// The menu is one element. Its row under the click is the item, and a click on its border is none.
+		if index := c.menuItemOn(event.Y); index >= 0 {
+			c.pick(p, index)
+		}
 		return
 	}
-	menuItem := strings.HasPrefix(event.ID, menuPrefix)
-	if c.overlay() != "" && !menuItem {
+	if event.Action == "" || c.overlay() != "" {
 		return
 	}
-	c.closeOverlay()
 	c.act(p, event.Action)
 }
 

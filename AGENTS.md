@@ -36,6 +36,8 @@ It tidies, vets, runs the Go tests with coverage, builds `build/gmux` and runs `
 - A pane's input goes through its queue (`Pane.Input`). Nothing writes to a pty while it holds a lock.
 - Pane output asks for at most one frame per `ui.minFrame`. Input and structure changes ask at once.
 - tml reports the pointer only for widgets. A clickable piece of a bar is a `<Hit>` around its content.
+- A control tml has is tml's: the menu is its `<Menu>`, and a pane's scrollbar is its `widget.Scrollbar`. A missing one is added there, not built here.
+- A pane's terminal is narrower than the pane by `ui.Gutter`, the column of its scrollbar. The server sets `mux.Config.Gutter`.
 - An element id in `screen.tml` is unique in the frame. A duplicate fails the frame, and that ends the program.
 - The cli keeps flags in package variables. A cli test calls `t.Serial`.
 

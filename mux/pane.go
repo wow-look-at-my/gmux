@@ -214,14 +214,17 @@ func (p *Pane) keyModes() keys.Modes {
 	return keys.Modes{AppCursor: modes.AppCursor, BracketedPaste: modes.BracketedPaste, MouseSGR: modes.MouseSGR}
 }
 
-// Key sends a key press to the program, and returns the view to the live screen.
-func (p *Pane) Key(key input.Key) {
+// Key sends a key press to the program, and returns the view to the live screen. It reports whether that changed
+// what the pane shows: a view that was scrolled back, or a selection that was on.
+func (p *Pane) Key(key input.Key) (changed bool) {
 	p.mu.Lock()
 	modes := p.keyModes()
+	changed = p.offset != 0 || p.sel.on
 	p.offset = 0
 	p.sel = selection{}
 	p.mu.Unlock()
 	p.Input(keys.Encode(key, modes))
+	return changed
 }
 
 // Paste sends pasted text to the program.

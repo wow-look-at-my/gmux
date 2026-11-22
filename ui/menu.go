@@ -7,7 +7,6 @@ import (
 
 	"github.com/wow-look-at-my/go-tmux/mux"
 	"github.com/wow-look-at-my/tml"
-	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -22,17 +21,11 @@ type menu struct {
 	hover int
 }
 
-const menuPrefix = "menu-"
+// menuID is the id of the menu's element. The view's <Menu> sizes itself and stays on screen by itself.
+const menuID = "menu"
 
-// openMenu shows a menu near a cell, moved so that all of it is on screen.
+// openMenu shows a menu at a cell.
 func (c *Client) openMenu(title string, x, y int, items []menuItem) {
-	width := cell.Width(title) + 4
-	for _, item := range items {
-		width = max(width, cell.Width(item.label)+4)
-	}
-	height := len(items) + 2
-	x = max(0, min(x, c.width-width))
-	y = max(0, min(y, c.height-height))
 	c.menu = &menu{title: title, x: x, y: y, items: items, hover: -1}
 	c.ask, c.help = nil, false
 }
@@ -55,23 +48,45 @@ func (c *Client) closeOverlay() {
 	c.menu, c.ask, c.help = nil, nil, false
 }
 
+// menuItemOn is the item on a row of the open menu's box, or negative. The first and the last row are the border.
+func (c *Client) menuItemOn(row int) int {
+	if c.menu == nil || row < 1 || row > len(c.menu.items) {
+		return -1
+	}
+	return row - 1
+}
+
+// menuItemAt is the item of the open menu under a cell of the screen, or negative.
+func (c *Client) menuItemAt(x, y int) int {
+	target, ok := c.view.UI().Target(menuID)
+	if !ok || x < target.Rect.X || x >= target.Rect.X+target.Rect.W {
+		return -1
+	}
+	return c.menuItemOn(y - target.Rect.Y)
+}
+
+// pick runs an item of the open menu and closes the menu.
+func (c *Client) pick(p *tml.Program, index int) {
+	m := c.menu
+	c.closeOverlay()
+	if m != nil && index >= 0 && index < len(m.items) {
+		c.act(p, m.items[index].action)
+	}
+}
+
 // overlayProps adds what the menu, the prompt and the help draw from.
 func (c *Client) overlayProps(props tml.Props) {
 	if m := c.menu; m != nil {
-		items := make([]chip, 0, len(m.items))
+		labels := make([]string, len(m.items))
 		for i, item := range m.items {
-			id := menuPrefix + strconv.Itoa(i)
-			look := "menu.item"
-			if i == m.hover || c.hover == id {
-				look = "menu.item.hover"
-			}
-			items = append(items, chip{id: id, action: item.action, label: item.label, look: look})
+			labels[i] = item.label
 		}
 		props["menuOpen"] = sema.BoolValue(true)
 		props["menuTitle"] = sema.StringValue(m.title)
 		props["menuX"] = sema.StringValue(strconv.Itoa(m.x))
 		props["menuY"] = sema.StringValue(strconv.Itoa(m.y))
-		props["menu"] = records(items)
+		props["menuItems"] = sema.ListValue(labels)
+		props["menuSelected"] = sema.StringValue(strconv.Itoa(m.hover))
 	}
 	if a := c.ask; a != nil {
 		props["promptOpen"] = sema.BoolValue(true)
@@ -98,7 +113,7 @@ func (c *Client) overlayProps(props tml.Props) {
 // windowMenu is the actions on one window, opened from its tab.
 func (c *Client) windowMenu(index, x, y int) {
 	n := strconv.Itoa(index)
-	c.openMenu("window "+n, x, y, []menuItem{
+	c.openMenu("window "+strconv.Itoa(windowNumber(index)), x, y, []menuItem{
 		{"Rename…", "rename-window:" + n},
 		{"Move left", "move-window:" + n + ":-1"},
 		{"Move right", "move-window:" + n + ":1"},
