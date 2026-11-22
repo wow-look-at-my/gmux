@@ -120,7 +120,12 @@ bars_at_both_ends() {
 # Every tab has the cell that closes its own window, and the row has no other close cell.
 tab_closes_its_window() {
 	add_window 2 && add_window 3 && echo "close cells: $(row "$windows_row" | grep -o "×" | wc -l)" &&
-		close_tab "3:sh" && gone outer " 3:sh" && echo "close cells: $(row "$windows_row" | grep -o "×" | wc -l)" &&
+		close_tab "3:sh" || return 1
+	if ! gone outer " 3:sh"; then
+		echo "clicked cell $x of: $(row "$windows_row")" >&2
+		return 1
+	fi
+	echo "close cells: $(row "$windows_row" | grep -o "×" | wc -l)" &&
 		row "$windows_row" | grep -c "2:sh" | sed 's/^/the tab beside it stays: /'
 }
 

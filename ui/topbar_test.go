@@ -60,6 +60,23 @@ func TestEachTabClosesItsOwnWindow(t *testing.T) {
 	r.eventually(func() bool { return r.windows() == "[sh]" }, "the second window never closed")
 }
 
+// The tab of the window on screen closes its window the same way, and the client shows the window that is left.
+func TestTheCloseCellOfTheTabOnScreenClosesIt(t *testing.T) {
+	r := newRig(t, 100, 12)
+	r.withQuietWindows("logs", "edit")
+	r.mux.SelectWindow(r.session, 2)
+	r.frame()
+	require.Equal(t, "sh logs [edit]", r.windows())
+
+	x, y := r.at(closePrefix + "2")
+	r.mouse(input.Press, input.ButtonLeft, x, y)
+	assert.Equal(t, closePrefix+"2", r.client.hover)
+	r.mouse(input.Release, input.ButtonLeft, x, y)
+	require.Eventually(t, func() bool { return len(strings.Fields(r.windows())) == 2 }, wait, 5*time.Millisecond,
+		"the window on screen never closed: %s", r.windows())
+	assert.NotContains(t, r.windows(), "edit")
+}
+
 // A program that takes the pointer gets every click in its pane. The menu cell of the window row still splits.
 func TestTheMenuCellSplitsUnderAProgramThatTakesThePointer(t *testing.T) {
 	r := newRig(t, 100, 24)
