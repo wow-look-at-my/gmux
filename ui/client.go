@@ -79,10 +79,10 @@ type Client struct {
 	// anchorX and anchorY are the cell under the bar element whose action runs now, while anchored is set.
 	anchorX, anchorY int
 	anchored         bool
-	menu  *menu
-	ask   *prompt
-	help  bool
-	note  string
+	menu             *menu
+	ask              *prompt
+	help             bool
+	note             string
 	// noteUntil is when the note leaves the bar.
 	noteUntil time.Time
 	detail    bool

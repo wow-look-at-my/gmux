@@ -13,14 +13,15 @@ import (
 
 func TestTheWindowRowIsOverTheWindowAndTheInformationRowUnderIt(t *testing.T) {
 	r := newRig(t, 100, 12)
-	r.shows("$")
+	r.typeLine("clear; echo first-row")
+	r.eventually(func() bool { return strings.HasPrefix(r.lines()[1], "first-row") },
+		"the first row of the window is not the row under the window row")
 	lines := r.lines()
 
 	assert.True(t, strings.HasPrefix(lines[0], " ☰  main  1:sh × "), "the first row is the window row: %q", lines[0])
 	assert.Contains(t, lines[0], " + ")
 	assert.Contains(t, lines[11], "CPU", "the last row is the information row")
 	assert.NotContains(t, lines[11], "1:sh")
-	assert.True(t, strings.HasPrefix(lines[1], "$"), "the window starts on the row under the window row: %q", lines[1])
 
 	// The pointer finds a pane where the pane is drawn: one row under where the pane's own rows count from.
 	require.NoError(t, r.mux.Split(r.session, layout.Rows, mux.Spawn{}))
