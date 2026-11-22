@@ -123,17 +123,21 @@ func windowNumber(index int) int { return index + 1 }
 // numberedWindow is the window a digit key names.
 func numberedWindow(digit int) int { return (digit + 9) % 10 }
 
-// tabLabel is what a window's tab says: its number, a mark for what happened
-// in it, and its name. The mark takes the place of the colon.
-func tabLabel(w mux.WindowInfo) string {
-	mark := ":"
+// tabMark is the mark for what happened in a window nobody looks at. A tab
+// draws it in the cell before its close cell, so the tab keeps its width.
+func tabMark(w mux.WindowInfo) string {
 	switch {
 	case w.Bell:
-		mark = "!"
+		return "!"
 	case w.Activity:
-		mark = "#"
+		return "#"
 	}
-	label := strconv.Itoa(windowNumber(w.Index)) + mark + w.Name
+	return ""
+}
+
+// tabLabel is what a window's tab says: its number and its name.
+func tabLabel(w mux.WindowInfo) string {
+	label := strconv.Itoa(windowNumber(w.Index)) + ":" + w.Name
 	if w.Zoomed {
 		label += " Z"
 	}
