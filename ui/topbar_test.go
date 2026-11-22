@@ -40,7 +40,7 @@ func TestTheWindowRowIsOverTheWindowAndTheInformationRowUnderIt(t *testing.T) {
 // Every window has the cell that closes it on its own tab, and nothing else on the row closes anything.
 func TestEachTabClosesItsOwnWindow(t *testing.T) {
 	r := newRig(t, 100, 12)
-	r.withWindows("logs", "edit")
+	r.withQuietWindows("logs", "edit")
 	windows, _ := r.bars()
 	assert.Contains(t, windows, " 1:sh ×  2:logs ×  3:edit × ")
 	assert.Equal(t, 3, strings.Count(windows, "×"), "one close cell for each tab, and no other: %q", windows)
@@ -142,7 +142,7 @@ func TestTheMenuCellReachesTheSessionsAndTheKeys(t *testing.T) {
 
 func TestTheBarsSayWhatTheirCellsDo(t *testing.T) {
 	r := newRig(t, 140, 12)
-	r.withWindows("logs")
+	r.withQuietWindows("logs")
 	require.NoError(t, r.mux.Split(r.session, layout.Columns, mux.Spawn{}))
 	r.frame()
 

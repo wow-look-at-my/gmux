@@ -24,6 +24,18 @@ func (r *rig) withWindows(names ...string) {
 	r.frame()
 }
 
+// withQuietWindows adds named windows whose program prints nothing. A window that prints while nobody looks gets
+// a mark on its tab, and the mark moves the cells after it. A test that aims at one cell of a tab uses these.
+func (r *rig) withQuietWindows(names ...string) {
+	r.t.Helper()
+	for i, name := range names {
+		require.NoError(r.t, r.mux.NewWindow(r.session, mux.Spawn{Command: []string{"sleep", "600"}}))
+		r.mux.RenameWindow(r.session, i+1, name)
+	}
+	r.mux.SelectWindow(r.session, 0)
+	r.frame()
+}
+
 func TestClickingATabShowsItsWindow(t *testing.T) {
 	r := newRig(t, 100, 12)
 	r.withWindows("logs", "edit")
@@ -299,7 +311,7 @@ func TestTheInformationRowAnswersClicks(t *testing.T) {
 
 func TestHoverMarksTheElementUnderThePointer(t *testing.T) {
 	r := newRig(t, 100, 12)
-	r.withWindows("logs")
+	r.withQuietWindows("logs")
 	x, y := r.at("tab-1")
 	before := r.frame().At(x, y).Style
 	r.mouse(input.Motion, input.ButtonNone, x, y)

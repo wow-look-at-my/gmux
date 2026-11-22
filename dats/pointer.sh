@@ -32,7 +32,8 @@ scene() {
 	return "$status"
 }
 
-windows_row=23
+# The window row is the first row of the screen, and the information row the last.
+windows_row=1
 info_row=24
 
 # row prints one row of what the inner gmux drew.
@@ -86,8 +87,68 @@ marked() { gmux send-keys -t outer "echo $1" Enter && shows outer "^$1" >/dev/nu
 
 add_window() { click 0 "$windows_row" "+" && shows outer " $1:sh " >/dev/null; }
 
+# item clicks an item of the open menu by its text.
+item() {
+	line=$(gmux capture-pane -t outer | grep -n -- "$1" | head -n 1 | cut -d: -f1)
+	if [ -z "$line" ]; then
+		echo "the open menu has no item $1" >&2
+		return 1
+	fi
+	click 0 "$line" "$1"
+}
+
+# menu opens the menu at the left end of the window row and clicks one of its items.
+menu() { click 0 "$windows_row" "☰" && shows outer "Split right" >/dev/null && item "$1"; }
+
+# close_tab clicks the close cell of the tab with a label.
+close_tab() {
+	x=$(column "$windows_row" "$1 ×") || return 1
+	x=$((x + ${#1} + 1))
+	report 0 "$x" "$windows_row" M && report 0 "$x" "$windows_row" m
+}
+
 click_adds_window() {
-	add_window 2 && gmux capture-pane -t outer | tail -n 2
+	add_window 2 && row "$windows_row" && row "$info_row"
+}
+
+# The window row is the first row of what gmux draws, and the information row is the last.
+bars_at_both_ends() {
+	gmux capture-pane -t outer | sed -n '1p' | grep -c "☰  demo  1:sh ×  +" | sed 's/^/top: /'
+	row "$info_row" | grep -c "MEM " | sed 's/^/bottom: /'
+}
+
+# Every tab has the cell that closes its own window, and the row has no other close cell.
+tab_closes_its_window() {
+	add_window 2 && add_window 3 && echo "close cells: $(row "$windows_row" | grep -o "×" | wc -l)" &&
+		close_tab "3:sh" && gone outer " 3:sh" && echo "close cells: $(row "$windows_row" | grep -o "×" | wc -l)" &&
+		row "$windows_row" | grep -c "2:sh" | sed 's/^/the tab beside it stays: /'
+}
+
+# The cell at the right end of the window row leaves gmux, and the session keeps running.
+detach_cell_leaves_the_session() {
+	click 0 "$windows_row" "─" && shows outer "detached (from session demo)" | grep -c "detached (from session demo)" &&
+		"$work/gmux" -S "$work/inner.sock" ls
+}
+
+# A program that takes the pointer gets the clicks in its pane, so no pane menu opens there. The menu of the
+# window row still splits the window.
+menu_splits_under_a_program_with_the_pointer() {
+	whole=$(size)
+	gmux send-keys -t outer "printf '\\033[?1000h\\033[?1006h'; echo has-the-pointer; cat -v" Enter || return 1
+	shows outer "^has-the-pointer" >/dev/null || return 1
+	report 2 30 6 M && report 2 30 6 m && shows outer "\\^\\[\\[<2;30;5M" >/dev/null || return 1
+	echo "pane menu: $(gmux capture-pane -t outer | grep -c "Even out panes")"
+	menu "Split right" && gone outer " $whole " && echo "split: $(size)"
+}
+
+# The pointer rests on a cell of the window row, and the cell says what it does after about a second. A move takes
+# the text away.
+tooltip_after_a_rest() {
+	x=$(column "$windows_row" "+") || return 1
+	report 35 "$x" "$windows_row" M || return 1
+	echo "at once: $(gmux capture-pane -t outer | grep -c " New window")"
+	shows outer " New window" | grep -c " New window" | sed 's/^/after a rest: /'
+	report 35 40 10 M && gone outer " New window" && echo "after a move: gone"
 }
 
 tab_menu_and_switch() {
@@ -97,15 +158,17 @@ tab_menu_and_switch() {
 		click 0 "$windows_row" "1:sh" && shows outer "^first-window" | grep -c "^first-window"
 }
 
-# The buttons at the right of the window row: split right, split down, zoom, close the pane, help.
+# The menu of the window row splits and closes panes and opens the help. The zoom cell at the right end shows once
+# the window has panes to zoom, and turns into the cell that brings them back.
 window_buttons() {
 	whole=$(size) &&
-		click 0 "$windows_row" "┃" && gone outer " $whole " && right=$(size) && echo "right $right" &&
-		click 0 "$windows_row" "━" && gone outer " $right " && below=$(size) && echo "below $below" &&
+		echo "zoom cell with one pane: $(row "$windows_row" | grep -c "□")" &&
+		menu "Split right" && gone outer " $whole " && right=$(size) && echo "right $right" &&
+		menu "Split down" && gone outer " $right " && below=$(size) && echo "below $below" &&
 		click 0 "$windows_row" "□" && shows outer " $whole " >/dev/null && echo "zoomed $(size)" &&
-		click 0 "$windows_row" "□" && shows outer " $below " >/dev/null &&
-		click 0 "$windows_row" "×" && gone outer " $below " && echo "closed $(size)" &&
-		click 0 "$windows_row" "?" && shows outer "gmux keys" | grep -c "gmux keys"
+		click 0 "$windows_row" "❐" && shows outer " $below " >/dev/null &&
+		menu "Close pane" && gone outer " $below " && echo "closed $(size)" &&
+		menu "Keys…" && shows outer "gmux keys" | grep -c "gmux keys"
 }
 
 wheel_turns_windows() {
@@ -120,8 +183,8 @@ middle_click_closes_window() {
 
 # A window takes the name of the program in front, so both tabs can be told apart.
 drag_moves_window() {
-	add_window 2 && gmux send-keys -t outer "sleep 300" Enter && shows outer " 1:sh  2:sleep " >/dev/null &&
-		drag "$windows_row" "2:sleep" "1:sh" && shows outer " 1:sleep  2:sh " | tail -n 2
+	add_window 2 && gmux send-keys -t outer "sleep 300" Enter && shows outer " 1:sh ×  2:sleep × " >/dev/null &&
+		drag "$windows_row" "2:sleep" "1:sh" && shows outer " 1:sleep ×  2:sh × " >/dev/null && row "$windows_row"
 }
 
 # A right click in the window opens the pane's menu. The menu is as wide as its longest line, not as the window.
@@ -130,15 +193,15 @@ pane_menu_fits() {
 		grep -e "╭ pane " -e "Even out panes" | sed 's/^ *//; s/ *$//'
 }
 
-# A pane that gets narrower cuts its long lines, and a pane that gets wider joins them again. The split button
-# halves the pane, and the close button on the new pane gives the room back.
+# A pane that gets narrower cuts its long lines, and a pane that gets wider joins them again. The menu's split
+# halves the pane, and closing the new pane gives the room back.
 reflow_on_resize() {
 	head=01234567890123456789012345678901234567
 	tail=8901234567890123456789
 	gmux send-keys -t outer "echo $head$tail" Enter && shows outer "^$head$tail\$" >/dev/null || return 1
-	click 0 "$windows_row" "┃" && shows outer "^$tail " >/dev/null || return 1
+	menu "Split right" && shows outer "^$tail " >/dev/null || return 1
 	echo "cut: $(gmux capture-pane -t outer | grep -c "^$head[^0-9]") then $(gmux capture-pane -t outer | grep -c "^$tail ")"
-	click 0 "$windows_row" "×" && shows outer "^$head$tail\$" | grep -c "^$head$tail\$" | sed 's/^/whole: /'
+	menu "Close pane" && shows outer "^$head$tail\$" | grep -c "^$head$tail\$" | sed 's/^/whole: /'
 }
 
 # A pane shows a scrollbar once it has history to scroll back to. The thumb is the only full block on screen.
