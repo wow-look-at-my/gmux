@@ -123,6 +123,10 @@ func (c *Client) barMouse(p *tml.Program, event tml.Mouse) bool {
 	over := c.hit(event.X, event.Y)
 	c.hover = over
 	index, onTab := tabIndex(over)
+	if event.Action == input.Press && !onTab {
+		// A second click counts only when it follows the first with no other press between them.
+		c.click = clickTracker{}
+	}
 	if event.Action != input.Press || !onTab {
 		return false
 	}

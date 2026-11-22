@@ -77,6 +77,20 @@ func TestTheCloseCellOfTheTabOnScreenClosesIt(t *testing.T) {
 	assert.NotContains(t, r.windows(), "edit")
 }
 
+// A click on a tab, a click on another cell, and a click on the tab again are not a second click on the tab.
+func TestAPressElsewhereEndsTheWaitForASecondClick(t *testing.T) {
+	r := newRig(t, 100, 12)
+	r.withQuietWindows("logs")
+	x, y := r.at(tabPrefix + "1")
+	r.click(input.ButtonLeft, x, y)
+	r.clickOn(idNewWindow)
+	r.click(input.ButtonLeft, x, y)
+	assert.Equal(t, "", r.client.overlay(), "no rename prompt opened")
+
+	r.click(input.ButtonLeft, x, y)
+	assert.Equal(t, "prompt", r.client.overlay(), "a click straight after the last one is the second click")
+}
+
 // A program that takes the pointer gets every click in its pane. The menu cell of the window row still splits.
 func TestTheMenuCellSplitsUnderAProgramThatTakesThePointer(t *testing.T) {
 	r := newRig(t, 100, 24)
