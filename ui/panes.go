@@ -24,6 +24,7 @@ type panes struct {
 	texts map[rune]string
 	// lines marks the cells of the window area that hold a divider.
 	lines []bool
+	look  paneStyles
 }
 
 func newPanes(client *Client) *panes {
@@ -33,12 +34,30 @@ func newPanes(client *Client) *panes {
 // Measure takes all the space on offer: the window area is whatever the bars leave.
 func (w *panes) Measure(maxW, maxH int) (int, int) { return max(0, maxW), max(0, maxH) }
 
-var (
-	borderStyle = cell.Style{Fg: cell.Indexed(8)}
-	activeStyle = cell.Style{Fg: cell.Indexed(12)}
-	fillStyle   = cell.Style{Fg: cell.Indexed(8)}
-	noteStyle   = cell.Style{Fg: cell.Indexed(0), Bg: cell.Indexed(11)}
-)
+// paneStyles are the styles the window's own marks are drawn in. The theme holds their colours.
+type paneStyles struct {
+	border, active, fill, note cell.Style
+}
+
+// setTheme takes the colours of the window's marks from the view's theme.
+func (w *panes) setTheme(theme cell.Palette) error {
+	names := []string{"paneLine", "paneLineActive", "paneBeyond", "scrollNoteText", "scrollNote"}
+	colors := make([]cell.Color, len(names))
+	for i, name := range names {
+		color, err := theme.Named(name)
+		if err != nil {
+			return err
+		}
+		colors[i] = color
+	}
+	w.look = paneStyles{
+		border: cell.Style{Fg: colors[0]},
+		active: cell.Style{Fg: colors[1]},
+		fill:   cell.Style{Fg: colors[2]},
+		note:   cell.Style{Fg: colors[3], Bg: colors[4]},
+	}
+	return nil
+}
 
 // Draw paints the window. Consider a client bigger than the session's area. That client shows the rest as a
 // dotted field, the way a window shared with a smaller terminal has to look.
@@ -46,7 +65,7 @@ func (w *panes) Draw(c cell.Canvas) {
 	view := w.client.mux.View(w.client.session)
 	width, height := c.Size()
 	if view.Area.W < width || view.Area.H < height {
-		c.Repeat(0, 0, width, height, "·", fillStyle)
+		c.Repeat(0, 0, width, height, "·", w.look.fill)
 	}
 	c.Erase(0, 0, min(width, view.Area.W), min(height, view.Area.H))
 	w.dividers(c, view)
@@ -115,9 +134,9 @@ func (w *panes) dividers(c cell.Canvas, view mux.WindowView) {
 						glyph = junctions[4]
 					}
 				}
-				style := borderStyle
+				style := w.look.border
 				if active.Contains(x, y) {
-					style = activeStyle
+					style = w.look.active
 				}
 				c.Text(x, y, glyph, style)
 			}
@@ -140,9 +159,9 @@ func (w *panes) scrollbar(c cell.Canvas, f mux.Frame, active bool, x, height int
 	if history == 0 || f.Screen.Modes().AltScreen {
 		return
 	}
-	style := borderStyle
+	style := w.look.border
 	if active {
-		style = activeStyle
+		style = w.look.active
 	}
 	paneBar(history, f.Offset, height).Draw(c, x, style)
 }
@@ -161,7 +180,7 @@ func (w *panes) pane(c cell.Canvas, pane mux.PaneView) {
 		}
 		if f.Offset > 0 {
 			note := "[" + strconv.Itoa(f.Offset) + "/" + strconv.Itoa(f.Screen.HistoryLen()) + "]"
-			c.Text(max(0, width-len(note)), 0, note, noteStyle)
+			c.Text(max(0, width-len(note)), 0, note, w.look.note)
 			return
 		}
 		cursor := f.Screen.Cursor()

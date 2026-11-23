@@ -94,6 +94,18 @@ func TestAttachDrawsTheSessionOnTheTerminalAndDetachGivesItBack(t *testing.T) {
 	term.Click(x, y)
 	term.Shows("attached-5")
 
+	// The close cell of a tab closes that tab's window. The tab on screen is the first again.
+	x, y = term.Find(" + ")
+	term.Click(x+1, y)
+	term.Shows("3:sh")
+	x, y = term.Find("3:sh ×")
+	term.Click(x+len("3:sh "), y)
+	term.Gone("3:sh")
+	term.Shows("2:sh")
+	x, y = term.Find("1:sh")
+	term.Click(x, y)
+	term.Shows("attached-5")
+
 	term.Resize(70, 20)
 	term.Shows("69×18")
 

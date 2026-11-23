@@ -1,15 +1,20 @@
 <?xml version="1.1" encoding="UTF-8"?>
 <Theme xmlns="urn:tml:v1" name="gmux">
-	<Token name="bar" light="#e6e9ef" dark="#1f2335"/>
-	<Token name="barText" light="#4c4f69" dark="#a9b1d6"/>
-	<Token name="dim" light="#8c8fa1" dark="#565f89"/>
-	<Token name="accent" light="#1e66f5" dark="#7aa2f7"/>
-	<Token name="accentText" light="#eff1f5" dark="#15161e"/>
-	<Token name="hover" light="#ccd0da" dark="#3b4261"/>
-	<Token name="alert" light="#d20f39" dark="#f7768e"/>
-	<Token name="good" light="#40a02b" dark="#9ece6a"/>
-	<Token name="warm" light="#df8e1d" dark="#e0af68"/>
-	<Token name="menu" light="#dce0e8" dark="#292e42"/>
+	<Color name="bar" for="the surface of the two bars" light="#e6e9ef" dark="#1f2335"/>
+	<Color name="barText" for="text on a bar and in a menu" light="#4c4f69" dark="#a9b1d6"/>
+	<Color name="dim" for="a label the eye can pass over" light="#8c8fa1" dark="#565f89"/>
+	<Color name="accent" for="the tab of the window on screen, the marked item of a menu, and the CPU graph" light="#1e66f5" dark="#7aa2f7"/>
+	<Color name="accentText" for="text on a surface filled with the accent, the session chip or the mode chip" light="#eff1f5" dark="#15161e"/>
+	<Color name="hover" for="the bar element under the pointer" light="#ccd0da" dark="#3b4261"/>
+	<Color name="alert" for="a window that rang its bell, and a close button under the pointer" light="#d20f39" dark="#f7768e"/>
+	<Color name="good" for="the session chip, and a note that something worked" light="#40a02b" dark="#9ece6a"/>
+	<Color name="warm" for="a window with new output, a tab that is dragged, and the mode chip" light="#df8e1d" dark="#e0af68"/>
+	<Color name="menu" for="the surface of a menu, the prompt and the help" light="#dce0e8" dark="#292e42"/>
+	<Color name="paneLine" for="the line between a pair of panes, and the scrollbar of a pane out of focus" value="8"/>
+	<Color name="paneLineActive" for="the lines around the pane in focus, and its scrollbar" value="12"/>
+	<Color name="paneBeyond" for="the dotted field past the session's area on a larger terminal" value="8"/>
+	<Color name="scrollNote" for="the surface of the counter on a pane that is scrolled back" value="11"/>
+	<Color name="scrollNoteText" for="the text of the counter on a pane that is scrolled back" value="0"/>
 
 	<Style name="bar" bg="{theme.bar}" fg="{theme.barText}"/>
 	<Style name="dim" fg="{theme.dim}"/>
@@ -20,6 +25,8 @@
 	<Style name="tab.alert" extends="tab" fg="{theme.alert}" bold="true"/>
 	<Style name="tab.busy" extends="tab" fg="{theme.warm}"/>
 	<Style name="tab.drag" extends="tab" bg="{theme.warm}" fg="{theme.accentText}" bold="true"/>
+	<Style name="close"/>
+	<Style name="close.hover" fg="{theme.alert}" bold="true"/>
 
 	<Style name="chip" padding="0 1"/>
 	<Style name="chip.hover" extends="chip" bg="{theme.hover}"/>

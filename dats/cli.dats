@@ -109,8 +109,43 @@ tests:
 	  exit: 0
 	  outputs:
 		stdout:
-			- " demo  1:sh  2:sh "
+			- " demo  1:sh ×  2:sh × "
 			- "MEM "
+
+	- desc: the window row is the first row of the screen, and the information row the last
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene bars_at_both_ends'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "top: 1\nbottom: 1"
+
+	- desc: the close cell of a tab closes that tab's window, and each tab has one
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene tab_closes_its_window'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "close cells: 3\nclose cells: 2\nthe tab beside it stays: 1"
+
+	- desc: the cell at the right end of the window row detaches, and the session keeps running
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene detach_cell_leaves_the_session'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "1\ndemo: 1 windows (created "
+
+	- desc: the menu of the window row splits the window under a program that takes the pointer
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene menu_splits_under_a_program_with_the_pointer'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "pane menu: 0\nsplit: 38×22"
+
+	- desc: a cell of the window row shows its tooltip after the pointer rests on it, and a move takes it away
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene tooltip_after_a_rest'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "at once: 0\nafter a rest: 1\nafter a move: gone"
 
 	- desc: a right click on a tab opens its menu, and a click on a tab shows its window
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene tab_menu_and_switch'
@@ -119,12 +154,12 @@ tests:
 		stdout:
 			- "1\n1"
 
-	- desc: the buttons of the window row split, zoom and close the pane, and open the help
+	- desc: the menu of the window row splits and closes panes and opens the help, and the zoom cell zooms
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene window_buttons'
 	  exit: 0
 	  outputs:
 		stdout:
-			- "right 38×22\nbelow 38×10\nzoomed 78×22\nclosed 38×22\n1"
+			- "zoom cell with one pane: 0\nright 38×22\nbelow 38×10\nzoomed 78×22\nclosed 38×22\n1"
 
 	- desc: the wheel over the tabs turns through the windows
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene wheel_turns_windows'
@@ -138,7 +173,7 @@ tests:
 	  exit: 0
 	  outputs:
 		stdout:
-			- " demo  1:sh  "
+			- " demo  1:sh × "
 		"!stdout":
 			- "2:sh"
 
@@ -147,7 +182,7 @@ tests:
 	  exit: 0
 	  outputs:
 		stdout:
-			- " demo  1:sleep  2:sh "
+			- " demo  1:sleep ×  2:sh × "
 
 	- desc: a right click in the window opens a menu as wide as its longest line
 	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene pane_menu_fits'

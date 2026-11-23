@@ -13,18 +13,37 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-// chip is one clickable cell of a bar.
+// chip is one clickable cell of the window row. tip is what it says when the pointer rests on it.
 type chip struct {
-	id, action, label, look string
+	id, action, label, look, tip string
+	// close is the cell that closes a tab's window. A chip that is not a tab has none.
+	close closer
+	// mark is what a tab draws in the cell before its close cell, or nothing for a blank there.
+	mark string
+}
+
+// closer is the cell at the end of a tab that closes the tab's window.
+type closer struct {
+	id, action, look, tip string
 }
 
 func (c chip) record() map[string]sema.Value {
-	return map[string]sema.Value{
+	fields := map[string]sema.Value{
 		"id":     sema.StringValue(c.id),
 		"action": sema.StringValue(c.action),
 		"label":  sema.StringValue(c.label),
 		"look":   sema.StringValue(c.look),
+		"tip":    sema.StringValue(c.tip),
 	}
+	if c.close.action != "" {
+		fields["closeId"] = sema.StringValue(c.close.id)
+		fields["closeAction"] = sema.StringValue(c.close.action)
+		fields["closeLook"] = sema.StringValue(c.close.look)
+		fields["closeTip"] = sema.StringValue(c.close.tip)
+		fields["mark"] = sema.StringValue(c.mark)
+		fields["blank"] = sema.BoolValue(c.mark == "")
+	}
+	return fields
 }
 
 func records(chips []chip) sema.Value {
@@ -35,35 +54,65 @@ func records(chips []chip) sema.Value {
 	return sema.RecordListValue(items)
 }
 
-// width is the cells a chip takes: its label and a cell of padding on each side.
-func (c chip) width() int { return cell.Width(c.label) + 2 }
+// width is the cells a chip takes: its label, a cell of padding on each side, and the close cell with its gap.
+func (c chip) width() int {
+	width := cell.Width(c.label) + 2
+	if c.close.action != "" {
+		width += 2
+	}
+	return width
+}
 
 // The ids and actions of the bar's own elements.
 const (
 	tabPrefix   = "tab-"
+	closePrefix = "close-"
 	actSelect   = "select-window:"
+	actKill     = "kill-window:"
 	idNewWindow = "new-window"
 	idMore      = "tabs-more"
+	idMainMenu  = "main-menu"
+	idZoom      = "zoom"
+	idDetach    = "detach"
 )
 
-// buttons are the cells at the right of the window row.
-var buttons = []chip{
-	{id: idNewWindow, action: "new-window", label: "+"},
-	{id: "split-right", action: "split-right", label: "┃"},
-	{id: "split-down", action: "split-down", label: "━"},
-	{id: "zoom", action: "zoom", label: "□"},
-	{id: "kill-pane", action: "kill-pane", label: "×"},
-	{id: "help", action: "help", label: "?"},
+// newWindow is the cell after the last tab.
+var newWindow = chip{id: idNewWindow, action: "new-window", label: "+", tip: "New window"}
+
+// buttons are the cells at the right end of the window row. They act on this client's own view of the session,
+// the way the buttons at the corner of a desktop window do. The zoom cell is there only when it does something:
+// when the window has more than one pane.
+func (c *Client) buttons(info mux.SessionInfo) []chip {
+	var cells []chip
+	for _, w := range info.Windows {
+		if !w.Active || w.Panes < 2 {
+			continue
+		}
+		zoom := chip{id: idZoom, action: "zoom", label: "□", tip: "Zoom: give the pane in focus the whole window"}
+		if w.Zoomed {
+			zoom.label, zoom.tip = "❐", "Zoomed. Click to show every pane of the window again"
+		}
+		cells = append(cells, zoom)
+	}
+	cells = append(cells, chip{
+		id: idDetach, action: "detach", label: "─",
+		tip: "Detach: leave gmux. The session and its programs keep running, and gmux attach comes back to them",
+	})
+	for i := range cells {
+		cells[i].look = c.look(cells[i].id, "chip")
+	}
+	return cells
 }
 
 // look picks a chip's style: the given, or the hover style while the pointer
 // is on it.
 func (c *Client) look(id, style string) string {
-	if c.hover == id && style == "tab" {
-		return "tab.hover"
+	if c.hover != id {
+		return style
 	}
-	if c.hover == id && style == "chip" {
-		return "chip.hover"
+	switch style {
+	case "tab", "chip", "close":
+		return style + ".hover"
 	}
 	return style
 }
@@ -74,15 +123,21 @@ func windowNumber(index int) int { return index + 1 }
 // numberedWindow is the window a digit key names.
 func numberedWindow(digit int) int { return (digit + 9) % 10 }
 
-// tabLabel is what a window's tab says: its number, its name, and a mark for what happened in it.
-func tabLabel(w mux.WindowInfo) string {
-	label := strconv.Itoa(windowNumber(w.Index)) + ":" + w.Name
+// tabMark is the mark for what happened in a window nobody looks at. A tab
+// draws it in the cell before its close cell, so the tab keeps its width.
+func tabMark(w mux.WindowInfo) string {
 	switch {
 	case w.Bell:
-		label += "!"
+		return "!"
 	case w.Activity:
-		label += "#"
+		return "#"
 	}
+	return ""
+}
+
+// tabLabel is what a window's tab says: its number and its name.
+func tabLabel(w mux.WindowInfo) string {
+	label := strconv.Itoa(windowNumber(w.Index)) + ":" + w.Name
 	if w.Zoomed {
 		label += " Z"
 	}
@@ -106,8 +161,16 @@ func (c *Client) tabs(info mux.SessionInfo, room int) []chip {
 		case w.Activity:
 			style = "tab.busy"
 		}
-		id := tabPrefix + strconv.Itoa(i)
-		all = append(all, chip{id: id, action: actSelect + strconv.Itoa(i), label: tabLabel(w), look: c.look(id, style)})
+		n, number := strconv.Itoa(i), strconv.Itoa(windowNumber(w.Index))
+		id, closeID := tabPrefix+n, closePrefix+n
+		all = append(all, chip{
+			id: id, action: actSelect + n, label: tabLabel(w), mark: tabMark(w), look: c.look(id, style),
+			tip: "Window " + number + ". Click to show it, drag to move it, click it again to rename it",
+			close: closer{
+				id: closeID, action: actKill + n, look: c.look(closeID, "close"),
+				tip: "Close window " + number + " and end its programs",
+			},
+		})
 	}
 	total := 0
 	for _, tab := range all {
@@ -119,7 +182,10 @@ func (c *Client) tabs(info mux.SessionInfo, room int) []chip {
 	// Grow outward from the active tab while there is room for the tab and for the cell that names the rest.
 	first, last := active, active
 	more := func(hidden int) chip {
-		return chip{id: idMore, action: "windows", label: "+" + strconv.Itoa(hidden) + " …", look: c.look(idMore, "tab")}
+		return chip{
+			id: idMore, action: "windows", label: "+" + strconv.Itoa(hidden) + " …", look: c.look(idMore, "tab"),
+			tip: "The windows with no room on the row. Click for the list",
+		}
 	}
 	used := all[active].width()
 	for {
@@ -151,6 +217,9 @@ func (c *Client) tabs(info mux.SessionInfo, room int) []chip {
 	return shown
 }
 
+// menuWidth is the cells the menu cell takes at the left end of the window row.
+const menuWidth = 3
+
 // dirLeast is the room the working directory keeps on the bar while anything else can still give way.
 const dirLeast = 24
 
@@ -168,20 +237,21 @@ func shortDir(dir string) string {
 // Props is what the view draws from.
 func (c *Client) Props() tml.Props {
 	info, _ := c.mux.Info(c.session)
-	actions := make([]chip, 0, len(buttons))
-	actionsWidth := 0
-	for _, b := range buttons {
-		b.look = c.look(b.id, "chip")
-		actions = append(actions, b)
-		actionsWidth += b.width()
+	actions := c.buttons(info)
+	plus := newWindow
+	plus.look = c.look(plus.id, "chip")
+	// The row also holds the menu cell, the session and the cell that adds a window.
+	taken := menuWidth + cell.Width(info.Name) + 2 + plus.width()
+	for _, b := range actions {
+		taken += b.width()
 	}
-	sessionWidth := cell.Width(info.Name) + 2
 	props := tml.Props{
-		"session": sema.StringValue(info.Name),
-		"tabs":    records(c.tabs(info, c.width-sessionWidth-actionsWidth)),
-		"actions": records(actions),
-		"mode":    sema.StringValue(c.mode()),
-		"clock":   sema.StringValue(c.clock()),
+		"session":  sema.StringValue(info.Name),
+		"menuLook": sema.StringValue(c.look(idMainMenu, "chip")),
+		"tabs":     records(append(c.tabs(info, c.width-taken), plus)),
+		"actions":  records(actions),
+		"mode":     sema.StringValue(c.mode()),
+		"clock":    sema.StringValue(c.clock()),
 	}
 	if pane := c.mux.ActivePane(c.session); pane != nil {
 		p := pane.Info()

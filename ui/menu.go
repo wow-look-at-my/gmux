@@ -122,6 +122,34 @@ func (c *Client) windowMenu(index, x, y int) {
 	})
 }
 
+// mainMenu is everything the session can do, opened from the menu cell of the window row. The bar keeps its
+// clicks, so this menu is there when the program in a pane takes the pointer for itself.
+func (c *Client) mainMenu(x, y int) {
+	zoom := "Zoom the pane"
+	if c.mux.View(c.session).Zoomed {
+		zoom = "Show every pane"
+	}
+	items := []menuItem{
+		{"New window", "new-window"},
+		{"Split right", "split-right"},
+		{"Split down", "split-down"},
+		{zoom, "zoom"},
+		{"Even out panes", "equalize"},
+		{"Close pane", "kill-pane"},
+		{"Scroll back", "scroll"},
+	}
+	if c.clip != "" {
+		items = append(items, menuItem{"Paste", "paste"})
+	}
+	items = append(items,
+		menuItem{"Rename window…", "rename-window"},
+		menuItem{"Sessions…", "sessions"},
+		menuItem{"Detach", "detach"},
+		menuItem{"Keys…", "help"},
+	)
+	c.openMenu("gmux", x, y, items)
+}
+
 // paneMenu is the actions on the active pane, opened in the window.
 func (c *Client) paneMenu(x, y int) {
 	items := []menuItem{
@@ -163,7 +191,7 @@ func (c *Client) windowList(x, y int) {
 	info, _ := c.mux.Info(c.session)
 	items := make([]menuItem, 0, len(info.Windows))
 	for _, w := range info.Windows {
-		items = append(items, menuItem{tabLabel(w), actSelect + strconv.Itoa(w.Index)})
+		items = append(items, menuItem{tabLabel(w) + tabMark(w), actSelect + strconv.Itoa(w.Index)})
 	}
 	c.openMenu("windows", x, y, items)
 }

@@ -24,6 +24,18 @@ func (r *rig) withWindows(names ...string) {
 	r.frame()
 }
 
+// withQuietWindows adds named windows whose program prints nothing. A window that prints while nobody looks gets
+// a mark on its tab, and the mark moves the cells after it. A test that aims at one cell of a tab uses these.
+func (r *rig) withQuietWindows(names ...string) {
+	r.t.Helper()
+	for i, name := range names {
+		require.NoError(r.t, r.mux.NewWindow(r.session, mux.Spawn{Command: []string{"sleep", "600"}}))
+		r.mux.RenameWindow(r.session, i+1, name)
+	}
+	r.mux.SelectWindow(r.session, 0)
+	r.frame()
+}
+
 func TestClickingATabShowsItsWindow(t *testing.T) {
 	r := newRig(t, 100, 12)
 	r.withWindows("logs", "edit")
@@ -36,18 +48,29 @@ func TestClickingATabShowsItsWindow(t *testing.T) {
 
 func TestTheButtonsOfTheWindowRow(t *testing.T) {
 	r := newRig(t, 100, 20)
-	r.clickOn("new-window")
+	r.clickOn(idNewWindow)
 	assert.Equal(t, "sh [sh]", r.windows())
-	r.clickOn("split-right")
-	r.clickOn("split-down")
-	require.Len(t, r.mux.View(r.session).Panes, 3)
-	r.clickOn("zoom")
+
+	// The zoom cell is there only when the window has panes to zoom.
+	_, there := r.client.View().UI().Target(idZoom)
+	assert.False(t, there, "one pane has nothing to zoom over")
+	require.NoError(t, r.mux.Split(r.session, layout.Columns, mux.Spawn{}))
+	r.clickOn(idZoom)
 	assert.True(t, r.mux.View(r.session).Zoomed)
-	r.clickOn("zoom")
-	r.clickOn("kill-pane")
-	r.eventually(func() bool { return len(r.mux.View(r.session).Panes) == 2 }, "the pane never closed")
-	r.clickOn("help")
-	assert.Equal(t, "help", r.client.overlay())
+	windows, _ := r.bars()
+	assert.Contains(t, windows, "❐", "a zoomed window shows the cell that brings the panes back")
+	r.clickOn(idZoom)
+	assert.False(t, r.mux.View(r.session).Zoomed)
+	windows, _ = r.bars()
+	assert.Contains(t, windows, "□")
+
+	// The cell at the far right leaves gmux, and the session keeps running.
+	assert.True(t, strings.HasSuffix(strings.TrimRight(windows, " "), "─"), "the row ends with the detach cell: %q", windows)
+	r.clickOn(idDetach)
+	assert.Equal(t, Detached, r.client.Outcome())
+	assert.True(t, r.client.quitting)
+	assert.Len(t, r.mux.List(), 1, "the session is still there to attach to")
+	assert.Equal(t, "sh [sh]", r.windows())
 }
 
 func TestTheWheelOverTheTabsTurnsThroughTheWindows(t *testing.T) {
@@ -288,15 +311,23 @@ func TestTheInformationRowAnswersClicks(t *testing.T) {
 
 func TestHoverMarksTheElementUnderThePointer(t *testing.T) {
 	r := newRig(t, 100, 12)
-	r.withWindows("logs")
+	r.withQuietWindows("logs")
 	x, y := r.at("tab-1")
 	before := r.frame().At(x, y).Style
 	r.mouse(input.Motion, input.ButtonNone, x, y)
 	assert.Equal(t, "tab-1", r.client.hover)
 	assert.NotEqual(t, before, r.frame().At(x, y).Style)
-	x, y = r.at("zoom")
+	x, y = r.at(idDetach)
 	r.mouse(input.Motion, input.ButtonNone, x, y)
-	assert.Equal(t, "zoom", r.client.hover)
+	assert.Equal(t, idDetach, r.client.hover)
+
+	// The cell that closes a tab is marked by itself, and its tab is not.
+	x, y = r.at(closePrefix + "1")
+	plain := r.frame().At(x, y).Style
+	r.mouse(input.Motion, input.ButtonNone, x, y)
+	assert.Equal(t, closePrefix+"1", r.client.hover)
+	assert.NotEqual(t, plain, r.frame().At(x, y).Style)
+
 	r.mouse(input.Motion, input.ButtonNone, 5, 2)
 	assert.Equal(t, "", r.client.hover, "the pointer left the bars")
 }

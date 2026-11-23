@@ -20,8 +20,10 @@ func TestTheScreenIsTheWindowAndTwoBars(t *testing.T) {
 	r.shows("hello-42")
 
 	windows, info := r.bars()
-	assert.True(t, strings.HasPrefix(windows, " main  1:sh "), windows)
-	assert.True(t, strings.HasSuffix(strings.TrimRight(windows, " "), "+  ┃  ━  □  ×  ?"), windows)
+	assert.True(t, strings.HasPrefix(windows, " ≡  main  1:sh ×  + "), windows)
+	assert.True(t, strings.HasSuffix(strings.TrimRight(windows, " "), "  ─"), windows)
+	assert.Equal(t, windows, r.lines()[0], "the window row is the first row of the screen")
+	assert.Equal(t, info, r.lines()[19], "the information row is the last")
 	assert.Contains(t, info, "100×18")
 	assert.Contains(t, info, "CPU")
 	assert.Contains(t, info, "12%")
@@ -169,7 +171,7 @@ func TestScrollingBackThroughHistory(t *testing.T) {
 	_, info := r.bars()
 	assert.Contains(t, info, "SCROLL")
 	assert.Equal(t, 5, pane.Info().Offset)
-	assert.Contains(t, r.lines()[0], "[5/")
+	assert.Contains(t, r.window()[0], "[5/")
 
 	r.keys("up", "k")
 	assert.Equal(t, 7, pane.Info().Offset)
@@ -236,11 +238,12 @@ func TestAProgramThatAsksGetsThePointer(t *testing.T) {
 	r := newRig(t, 60, 12)
 	r.reader(`printf '\033[?1002h\033[?1006h'; `)
 	r.eventually(func() bool { return r.mux.ActivePane(r.session).Modes().MouseSGR }, "never asked")
-	r.mouse(input.Press, input.ButtonLeft, 3, 4)
-	r.mouse(input.Motion, input.ButtonLeft, 5, 4)
+	// The program counts its rows from the top of its pane, which is the row under the window row.
+	r.mouse(input.Press, input.ButtonLeft, 3, topRows+4)
+	r.mouse(input.Motion, input.ButtonLeft, 5, topRows+4)
 	// A drag that leaves the pane still reports, at the pane's edge.
 	r.mouse(input.Motion, input.ButtonLeft, 5, 11)
-	r.mouse(input.Release, input.ButtonLeft, 5, 4)
+	r.mouse(input.Release, input.ButtonLeft, 5, topRows+4)
 	r.keys("enter")
 	r.shows("^[[<0;4;5M^[[<32;6;5M^[[<32;6;10M^[[<0;6;5m")
 }
@@ -314,18 +317,21 @@ func TestLinesJoinWherePanesMeet(t *testing.T) {
 	require.NoError(t, r.mux.Split(r.session, layout.Columns, mux.Spawn{}))
 	require.NoError(t, r.mux.Split(r.session, layout.Rows, mux.Spawn{}))
 	frame := r.frame()
-	assert.Equal(t, "│", frame.At(20, 0).Text)
-	assert.Equal(t, "├", frame.At(20, 5).Text)
-	assert.Equal(t, "─", frame.At(30, 5).Text)
-	assert.Equal(t, activeStyle.Fg, frame.At(30, 5).Style.Fg, "the lines around the active pane take the accent")
-	assert.Equal(t, borderStyle.Fg, frame.At(20, 0).Style.Fg)
+	theme := r.client.View().Theme()
+	assert.Equal(t, "│", frame.At(20, topRows).Text)
+	assert.Equal(t, "├", frame.At(20, topRows+5).Text)
+	assert.Equal(t, "─", frame.At(30, topRows+5).Text)
+	assert.Equal(t, theme["paneLineActive"], frame.At(30, topRows+5).Style.Fg, "the lines around the active pane take their own colour")
+	assert.Equal(t, theme["paneLine"], frame.At(20, topRows).Style.Fg)
+	assert.True(t, theme["paneLine"].IsSet())
 }
 
 func TestAClientLargerThanTheSessionShowsTheRestAsAField(t *testing.T) {
 	r := newRig(t, 60, 12)
 	r.mux.Attach(r.session, 99, 30, 5)
 	frame := r.frame()
-	assert.Equal(t, "·", frame.At(45, 2).Text)
-	assert.Equal(t, "·", frame.At(5, 8).Text)
-	assert.Equal(t, " ", frame.At(29, 4).Text)
+	assert.Equal(t, "·", frame.At(45, topRows+2).Text)
+	assert.Equal(t, "·", frame.At(5, topRows+8).Text)
+	assert.Equal(t, " ", frame.At(29, topRows+4).Text)
+	assert.Equal(t, r.client.View().Theme()["paneBeyond"], frame.At(45, topRows+2).Style.Fg)
 }

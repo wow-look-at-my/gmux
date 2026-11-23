@@ -17,8 +17,12 @@ import (
 //go:embed assets
 var assets embed.FS
 
-// barRows is how many rows the status bars take below the window area.
-const barRows = 2
+// The bars: the window row over the window area, and the information row under it.
+const (
+	topRows    = 1
+	bottomRows = 1
+	barRows    = topRows + bottomRows
+)
 
 // minFrame is the least time between frames that pane output asks for. Input and structure changes never wait.
 const minFrame = 8 * time.Millisecond
@@ -72,10 +76,13 @@ type Client struct {
 	cancelArmed func()
 	// hover is the id of the bar element under the pointer.
 	hover string
-	menu  *menu
-	ask   *prompt
-	help  bool
-	note  string
+	// anchorX and anchorY are the cell under the bar element whose action runs now, while anchored is set.
+	anchorX, anchorY int
+	anchored         bool
+	menu             *menu
+	ask              *prompt
+	help             bool
+	note             string
 	// noteUntil is when the note leaves the bar.
 	noteUntil time.Time
 	detail    bool
@@ -101,12 +108,13 @@ func New(opts Options) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	registry := widget.NewRegistry().Bind("Panes", newPanes(c)).Bind("Hit", hit{})
+	window := newPanes(c)
+	registry := widget.NewRegistry().Bind("Panes", window).Bind("Hit", hit{})
 	c.view, err = tml.Load(files, "screen.tml", tml.Options{Dark: !opts.Light, Widgets: registry})
 	if err != nil {
 		return nil, err
 	}
-	return c, nil
+	return c, window.setTheme(c.view.Theme())
 }
 
 // View is the document the client draws.
