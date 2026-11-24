@@ -1,4 +1,4 @@
-// attach.go holds the attach-session command.
+// session_attach.go holds the session attach command.
 
 package cli
 
@@ -10,10 +10,9 @@ import (
 var attachTarget string
 
 var attachCmd = &cobra.Command{
-	Use:     "attach-session",
-	Aliases: []string{"attach", "a"},
-	Short:   "Attach this terminal to a running session",
-	Args:    cobra.NoArgs,
+	Use:   "attach",
+	Short: "Attach this terminal to a running session",
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		return attach(cmd, server.Request{Target: attachTarget})
 	},
@@ -21,5 +20,5 @@ var attachCmd = &cobra.Command{
 
 func init() {
 	attachCmd.Flags().StringVarP(&attachTarget, "target", "t", "", "session to attach to (default: the one used last)")
-	root.AddCommand(attachCmd)
+	sessionCmd.AddCommand(attachCmd)
 }

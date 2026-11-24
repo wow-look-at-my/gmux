@@ -1,4 +1,4 @@
-// rename.go holds the rename-session command.
+// session_rename.go holds the session rename command.
 
 package cli
 
@@ -10,10 +10,9 @@ import (
 var renameTarget string
 
 var renameCmd = &cobra.Command{
-	Use:     "rename-session [flags] name",
-	Aliases: []string{"rename"},
-	Short:   "Give a session a new name",
-	Args:    cobra.ExactArgs(1),
+	Use:   "rename [flags] name",
+	Short: "Give a session a new name",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
 		_, err := server.Ask(socket(), server.Request{Op: server.OpRename, Target: renameTarget, Name: args[0]})
 		return err
@@ -22,5 +21,5 @@ var renameCmd = &cobra.Command{
 
 func init() {
 	renameCmd.Flags().StringVarP(&renameTarget, "target", "t", "", "session to rename (default: the one used last)")
-	root.AddCommand(renameCmd)
+	sessionCmd.AddCommand(renameCmd)
 }

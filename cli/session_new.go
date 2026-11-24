@@ -1,4 +1,4 @@
-// new.go holds the new-session command.
+// session_new.go holds the session new command.
 
 package cli
 
@@ -15,9 +15,8 @@ var newFlags struct {
 }
 
 var newCmd = &cobra.Command{
-	Use:     "new-session [flags] [-- command...]",
-	Aliases: []string{"new"},
-	Short:   "Start a session, and attach to it unless -d is given",
+	Use:   "new [flags] [-- command...]",
+	Short: "Start a session, and attach to it unless -d is given",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		req := server.Request{Name: newFlags.name, Dir: newFlags.dir, Command: args}
 		if newFlags.attach && newFlags.name != "" && sessionExists(newFlags.name) {
@@ -55,5 +54,5 @@ func init() {
 	newCmd.Flags().StringVarP(&newFlags.dir, "dir", "c", "", "working directory of the session")
 	newCmd.Flags().BoolVarP(&newFlags.detached, "detached", "d", false, "do not attach to the new session")
 	newCmd.Flags().BoolVarP(&newFlags.attach, "attach", "A", false, "attach to the session named by -s when it exists")
-	root.AddCommand(newCmd)
+	sessionCmd.AddCommand(newCmd)
 }

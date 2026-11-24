@@ -1,4 +1,4 @@
-// server.go holds the hidden command a client starts the server with.
+// server_run.go holds the hidden command a client starts the server with.
 
 package cli
 
@@ -10,13 +10,13 @@ import (
 	"github.com/wow-look-at-my/go-tmux/server"
 )
 
-var serverFlags struct {
+var serverRunFlags struct {
 	socket  string
 	noStats bool
 }
 
-var serverCmd = &cobra.Command{
-	Use:    "server",
+var serverRunCmd = &cobra.Command{
+	Use:    "run",
 	Short:  "Run the server in the foreground",
 	Hidden: true,
 	Args:   cobra.NoArgs,

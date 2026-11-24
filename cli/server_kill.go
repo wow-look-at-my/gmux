@@ -1,4 +1,4 @@
-// kill_server.go holds the kill-server command.
+// server_kill.go holds the server kill command.
 
 package cli
 
@@ -8,7 +8,7 @@ import (
 )
 
 var killServerCmd = &cobra.Command{
-	Use:   "kill-server",
+	Use:   "kill",
 	Short: "End the server and every session",
 	Args:  cobra.NoArgs,
 	RunE: func(*cobra.Command, []string) error {
@@ -17,4 +17,4 @@ var killServerCmd = &cobra.Command{
 	},
 }
 
-func init() { root.AddCommand(killServerCmd) }
+func init() { serverCmd.AddCommand(killServerCmd) }

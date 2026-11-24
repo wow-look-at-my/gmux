@@ -37,6 +37,16 @@ func init() {
 	root.PersistentFlags().StringVarP(&socketName, "socket-name", "L", "", "name of the server socket in the default directory")
 }
 
+// group makes a command that only holds other commands. A word after it that names none of them is an error.
+func group(use, short string) *cobra.Command {
+	return &cobra.Command{
+		Use:   use,
+		Short: short,
+		Args:  cobra.NoArgs,
+		RunE:  func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
+	}
+}
+
 // The seams a test replaces: where the terminal comes from, and how a server is started.
 var (
 	terminal = func() client.Terminal { return client.Terminal{In: os.Stdin, Out: os.Stdout} }
