@@ -8,12 +8,16 @@ The interface is [tml](https://github.com/wow-look-at-my/tml). The host readings
 
 ```bash
 gmux                      # start a session and attach: it takes the directory's name
-gmux new -s work          # start a session with a name of your own
-gmux attach -t work       # attach to a session that runs
-gmux ls                   # list the sessions
-gmux kill-session -t work
-gmux kill-server
+gmux session new -s work      # start a session with a name of your own
+gmux session attach -t work   # attach to a session that runs
+gmux session list             # list the sessions
+gmux session rename -t work job
+gmux session kill -t job
+gmux server kill              # end the server and every session
+gmux version
 ```
+
+The commands are in groups. A group with no command after it lists its commands.
 
 `ctrl+b` is the prefix, as in tmux. `ctrl+b ?` lists every key. The common ones:
 
@@ -36,7 +40,7 @@ The window row is at the top of the screen. It holds the menu, the session, a ta
 
 - `≡` opens the menu: new window, split right, split down, zoom, close the pane, sessions, detach, keys. The bars keep their clicks. The menu works when the program in a pane takes the mouse for itself.
 - `×` on a tab closes that tab's window. `+` adds a window.
-- `─` detaches: gmux leaves the terminal, and the session and its programs keep running until `gmux attach`.
+- `─` detaches: gmux leaves the terminal, and the session and its programs keep running until `gmux session attach`.
 - `□` zooms the pane in focus to the whole window, and `❐` brings the other panes back. The cell shows only when the window has more than one pane.
 - Rest the pointer on any cell of a bar for a second, and the cell says what it does.
 - Click a tab to show its window. Turn the wheel over the tabs to go through the windows.
@@ -52,9 +56,9 @@ The window row is at the top of the screen. It holds the menu, the session, a ta
 ## Scripting
 
 ```bash
-gmux new -d -s build -- make watch
-gmux send-keys -t build 'make test' Enter
-gmux capture-pane -t build
+gmux session new -d -s build -- make watch
+gmux pane send -t build 'make test' Enter
+gmux pane capture -t build
 ```
 
 ## Platforms

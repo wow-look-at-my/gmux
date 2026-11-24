@@ -107,34 +107,34 @@ func (h *harness) await(done chan string) string {
 
 func TestCommandsThatNeedNoTerminal(t *testing.T) {
 	h := newHarness(t)
-	h.fails("no server is running", "ls")
-	h.fails("no server is running", "kill-server")
+	h.fails("no server is running", "session", "ls")
+	h.fails("no server is running", "server", "kill")
 
-	h.ok("new-session", "-d", "-s", "work", "-c", t.TempDir())
-	h.ok("new", "-d")
-	h.fails("already exists", "new", "-d", "-s", "work")
+	h.ok("session", "new", "-d", "-s", "work", "-c", t.TempDir())
+	h.ok("session", "new", "-d")
+	h.fails("already exists", "session", "new", "-d", "-s", "work")
 
-	listing := h.ok("list-sessions")
+	listing := h.ok("session", "list")
 	lines := strings.Split(strings.TrimSpace(listing), "\n")
 	require.Len(t, lines, 2)
 	assert.Regexp(t, `^work: 1 windows \(created .+\) \[\d+x\d+\]$`, lines[0])
 	assert.True(t, strings.HasPrefix(lines[1], "cli: 1 windows"), "a session with no name takes its directory's: %s", lines[1])
 
-	h.ok("send-keys", "-t", "work", "echo cli-$((3+4))", "Enter")
+	h.ok("pane", "send", "-t", "work", "echo cli-$((3+4))", "Enter")
 	require.Eventually(t, func() bool {
-		return strings.Contains(h.ok("capture-pane", "-p", "-t", "work"), "cli-7")
+		return strings.Contains(h.ok("pane", "capture", "-p", "-t", "work"), "cli-7")
 	}, ttytest.Wait, 20*time.Millisecond)
-	h.ok("send-keys", "-l", "-t", "work", "Enter")
+	h.ok("pane", "send", "-l", "-t", "work", "Enter")
 	require.Eventually(t, func() bool {
-		return strings.Contains(h.ok("capture-pane", "-t", "work"), " Enter")
+		return strings.Contains(h.ok("pane", "capture", "-t", "work"), " Enter")
 	}, ttytest.Wait, 20*time.Millisecond)
 
-	h.ok("rename-session", "-t", "work", "job")
-	h.fails("no session named", "capture-pane", "-t", "work")
-	h.ok("kill-session", "-t", "job")
-	assert.NotContains(t, h.ok("ls"), "job")
+	h.ok("session", "rename", "-t", "work", "job")
+	h.fails("no session named", "pane", "capture", "-t", "work")
+	h.ok("session", "kill", "-t", "job")
+	assert.NotContains(t, h.ok("session", "list"), "job")
 
-	h.ok("kill-server")
+	h.ok("server", "kill")
 	select {
 	case <-h.srv.Done():
 	case <-time.After(ttytest.Wait):
@@ -144,15 +144,15 @@ func TestCommandsThatNeedNoTerminal(t *testing.T) {
 
 func TestAttachingCommands(t *testing.T) {
 	h := newHarness(t)
-	h.fails("no server is running", "attach")
+	h.fails("no server is running", "session", "attach")
 
-	done := h.background("new", "-s", "live")
+	done := h.background("session", "new", "-s", "live")
 	h.term.Shows(" live ")
 	h.term.Send("\x02d")
 	assert.Equal(t, "[detached (from session live)]\n", h.await(done))
-	assert.Contains(t, h.ok("ls"), "live: 1 windows")
+	assert.Contains(t, h.ok("session", "list"), "live: 1 windows")
 
-	done = h.background("attach", "-t", "live")
+	done = h.background("session", "attach", "-t", "live")
 	h.term.Shows(" live ")
 	// The command line is one at a time, so the listing is asked of the server directly while the attach runs.
 	resp, err := server.Ask(h.socket, server.Request{Op: server.OpList})
@@ -162,7 +162,7 @@ func TestAttachingCommands(t *testing.T) {
 	assert.Contains(t, h.await(done), "detached")
 
 	// With -A, a session that exists is joined and not made again.
-	done = h.background("new", "-A", "-s", "live")
+	done = h.background("session", "new", "-A", "-s", "live")
 	h.term.Shows(" live ")
 	h.term.Send("exit\r")
 	assert.Equal(t, "[exited]\n", h.await(done))
@@ -179,40 +179,75 @@ func TestNoCommandStartsASessionAndAttaches(t *testing.T) {
 func TestAnAttachFromInsideASessionIsRefused(t *testing.T) {
 	h := newHarness(t)
 	os.Setenv(client.NestEnv, "/some/socket")
-	h.fails("already inside a gmux session", "attach")
-	h.fails("already inside a gmux session", "new")
+	h.fails("already inside a gmux session", "session", "attach")
+	h.fails("already inside a gmux session", "session", "new")
 	h.fails("already inside a gmux session")
 	// A session nobody attaches to can still be started from inside one.
-	h.ok("new", "-d")
+	h.ok("session", "new", "-d")
 }
 
 func TestTheServerCommandServesUntilKilled(t *testing.T) {
 	h := newHarness(t)
-	done := h.background("server", "--socket", h.socket, "--no-stats")
+	done := h.background("server", "run", "--socket", h.socket, "--no-stats")
 	require.Eventually(t, func() bool {
 		_, err := server.Ask(h.socket, server.Request{Op: server.OpList})
 		return err == nil
 	}, ttytest.Wait, 10*time.Millisecond)
 
 	// A second server on the socket has nothing to do, and says so by ending cleanly.
-	_, _, code := h.run("server", "--no-stats")
+	_, _, code := h.run("server", "run", "--no-stats")
 	assert.Zero(t, code)
 
-	h.ok("kill-server")
+	h.ok("server", "kill")
 	assert.Contains(t, h.await(done), "listening on "+h.socket)
 }
 
 func TestTheServerCommandReportsASocketItCannotTake(t *testing.T) {
 	h := newHarness(t)
-	h.fails("cannot create", "server", "--socket", "/proc/nope/s.sock", "--no-stats")
+	h.fails("cannot create", "server", "run", "--socket", "/proc/nope/s.sock", "--no-stats")
 }
 
 func TestVersionAndUsage(t *testing.T) {
 	h := newHarness(t)
 	assert.Contains(t, h.ok("--version"), "test-version")
-	assert.Contains(t, h.ok("--help"), "new-session")
+	assert.Equal(t, "gmux version test-version\n", h.ok("version"))
 	h.fails("unknown command", "dance")
-	h.fails("requires at least 1 arg", "send-keys")
+	h.fails("requires at least 1 arg", "pane", "send")
+}
+
+func TestABuildWithNoReleaseHasNoVersion(t *testing.T) {
+	newHarness(t)
+	var out, errOut bytes.Buffer
+	require.Equal(t, 1, Execute("", []string{"version"}, &out, &errOut))
+	assert.Empty(t, out.String())
+	assert.Contains(t, errOut.String(), "not built for a release")
+}
+
+func TestTheGroupsHoldTheCommands(t *testing.T) {
+	h := newHarness(t)
+	help := h.ok("--help")
+	for _, name := range []string{"session", "server", "pane", "version"} {
+		assert.Regexp(t, `(?m)^  `+name+` `, help)
+	}
+	for group, names := range map[string][]string{
+		"session": {"new", "attach", "rename", "kill", "list"},
+		"server":  {"kill"},
+		"pane":    {"send", "capture"},
+	} {
+		// A group with no command after it prints its help.
+		help := h.ok(group)
+		for _, name := range names {
+			assert.Regexp(t, `(?m)^  `+name+` `, help, "gmux %s", group)
+		}
+		h.fails(`unknown command "dance" for "gmux `+group+`"`, group, "dance")
+	}
+	assert.NotContains(t, h.ok("server", "--help"), "  run ")
+
+	// The names the commands had before the groups are gone.
+	for _, old := range []string{"new-session", "attach-session", "rename-session", "kill-session", "list-sessions",
+		"kill-server", "send-keys", "capture-pane", "new", "attach", "ls"} {
+		h.fails("unknown command", old)
+	}
 }
 
 func TestStartingTheServerFailsLoudly(t *testing.T) {

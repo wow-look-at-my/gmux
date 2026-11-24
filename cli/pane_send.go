@@ -1,4 +1,4 @@
-// send_keys.go holds the send-keys command.
+// pane_send.go holds the pane send command.
 
 package cli
 
@@ -13,7 +13,7 @@ var sendKeysFlags struct {
 }
 
 var sendKeysCmd = &cobra.Command{
-	Use:   "send-keys [flags] key...",
+	Use:   "send [flags] key...",
 	Short: "Type keys into the active pane of a session",
 	Long: "Each argument is a key name (enter, tab, esc, up, f5, ctrl+c, or tmux's Enter and C-c) or text to type.\n" +
 		"With -l every argument is text.",
@@ -29,5 +29,5 @@ var sendKeysCmd = &cobra.Command{
 func init() {
 	sendKeysCmd.Flags().StringVarP(&sendKeysFlags.target, "target", "t", "", "session to type into (default: the one used last)")
 	sendKeysCmd.Flags().BoolVarP(&sendKeysFlags.literal, "literal", "l", false, "send every argument as text")
-	root.AddCommand(sendKeysCmd)
+	paneCmd.AddCommand(sendKeysCmd)
 }

@@ -22,11 +22,11 @@ var serverRunCmd = &cobra.Command{
 	Args:   cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		logger := log.New(cmd.ErrOrStderr(), "", log.LstdFlags)
-		path := serverFlags.socket
+		path := serverRunFlags.socket
 		if path == "" {
 			path = socket()
 		}
-		srv := server.New(server.Options{Socket: path, NoStats: serverFlags.noStats, Logf: logger.Printf})
+		srv := server.New(server.Options{Socket: path, NoStats: serverRunFlags.noStats, Logf: logger.Printf})
 		if err := srv.Listen(); err != nil {
 			// A second server started in the same moment has nothing to do: the first one answers.
 			if errors.Is(err, server.ErrRunning) {
@@ -40,7 +40,7 @@ var serverRunCmd = &cobra.Command{
 }
 
 func init() {
-	serverCmd.Flags().StringVar(&serverFlags.socket, "socket", "", "path to listen on")
-	serverCmd.Flags().BoolVar(&serverFlags.noStats, "no-stats", false, "leave the host's load off the bars")
-	root.AddCommand(serverCmd)
+	serverRunCmd.Flags().StringVar(&serverRunFlags.socket, "socket", "", "path to listen on")
+	serverRunCmd.Flags().BoolVar(&serverRunFlags.noStats, "no-stats", false, "leave the host's load off the bars")
+	serverCmd.AddCommand(serverRunCmd)
 }
