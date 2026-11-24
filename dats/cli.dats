@@ -55,13 +55,10 @@ tests:
 		stderr:
 			- 'unknown command "list-sessions" for "gmux"'
 
-	# A build outside CI has no release, so the binary has no version to print. Both builds run this test.
-	- desc: version prints the release the binary was built as, or says the build has none
-	  cmd: dats/with-socket.sh 'out=$(gmux version 2>&1); code=$?; case "$code $out" in "0 gmux version "[0-9]*) echo ok;; "1 gmux: this binary was not built for a release"*) echo ok;; *) echo "$code $out"; exit 1;; esac'
+	# A release build stamps the binary. A build outside CI does not, and its binary has no version to print.
+	- desc: version prints the release and the commit the build stamped, and a build with no release says so
+	  cmd: dats/with-socket.sh 'want="1 gmux: this binary was not built for a release, so it has no version"; [ -n "$(stamp release)" ] && want="0 gmux version $(stamp release) ($(stamp release.revision))"; out=$(gmux version 2>&1); got="$? $out"; echo "got:  $got"; echo "want: $want"; [ "$got" = "$want" ]'
 	  exit: 0
-	  outputs:
-		stdout:
-			- "ok"
 
 	- desc: listing with no server says none is running
 	  cmd: dats/with-socket.sh 'gmux session list'

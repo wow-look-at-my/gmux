@@ -60,9 +60,9 @@ var (
 )
 
 // Execute runs the command line and reports the process's exit code.
-func Execute(version string, args []string, stdout, stderr io.Writer) int {
+func Execute(args []string, stdout, stderr io.Writer) int {
 	reset(root)
-	root.Version = version
+	root.Version = Version
 	root.SetArgs(args)
 	root.SetOut(stdout)
 	root.SetErr(stderr)

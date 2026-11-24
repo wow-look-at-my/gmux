@@ -9,6 +9,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version is the release and its commit. The linker of a release build fills it.
+var Version string
+
 // errNoVersion is what a binary reports when no release build filled in its version.
 var errNoVersion = errors.New("this binary was not built for a release, so it has no version")
 

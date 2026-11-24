@@ -33,6 +33,9 @@ func newHarness(t *testing.T) *harness {
 	require.NoError(t, err)
 	h := &harness{t: t, socket: filepath.Join(dir, "s.sock"), term: ttytest.Open(t, 100, 24)}
 
+	oldVersion := Version
+	Version = "53 (test-commit)"
+	t.Cleanup(func() { Version = oldVersion })
 	oldStart, oldTerminal, oldNest, oldPS1 := start, terminal, os.Getenv(client.NestEnv), os.Getenv("PS1")
 	os.Unsetenv(client.NestEnv)
 	os.Setenv("PS1", "$ ")
@@ -66,7 +69,7 @@ func newHarness(t *testing.T) *harness {
 // run executes one command line and returns what it printed.
 func (h *harness) run(args ...string) (stdout, stderr string, code int) {
 	var out, errOut bytes.Buffer
-	code = Execute("test-version", append([]string{"-S", h.socket}, args...), &out, &errOut)
+	code = Execute(append([]string{"-S", h.socket}, args...), &out, &errOut)
 	return out.String(), errOut.String(), code
 }
 
@@ -132,7 +135,9 @@ func TestCommandsThatNeedNoTerminal(t *testing.T) {
 	h.ok("session", "rename", "-t", "work", "job")
 	h.fails("no session named", "pane", "capture", "-t", "work")
 	h.ok("session", "kill", "-t", "job")
-	assert.NotContains(t, h.ok("session", "list"), "job")
+	listing = h.ok("session", "list")
+	assert.NotContains(t, listing, "job")
+	assert.Equal(t, listing, h.ok("session", "ls"), "ls is another name of list")
 
 	h.ok("server", "kill")
 	select {
@@ -209,18 +214,19 @@ func TestTheServerCommandReportsASocketItCannotTake(t *testing.T) {
 
 func TestVersionAndUsage(t *testing.T) {
 	h := newHarness(t)
-	assert.Contains(t, h.ok("--version"), "test-version")
-	assert.Equal(t, "gmux version test-version\n", h.ok("version"))
+	assert.Equal(t, "gmux version 53 (test-commit)\n", h.ok("--version"))
+	assert.Equal(t, "gmux version 53 (test-commit)\n", h.ok("version"))
 	h.fails("unknown command", "dance")
 	h.fails("requires at least 1 arg", "pane", "send")
 }
 
 func TestABuildWithNoReleaseHasNoVersion(t *testing.T) {
-	newHarness(t)
-	var out, errOut bytes.Buffer
-	require.Equal(t, 1, Execute("", []string{"version"}, &out, &errOut))
-	assert.Empty(t, out.String())
-	assert.Contains(t, errOut.String(), "not built for a release")
+	h := newHarness(t)
+	Version = ""
+	stdout, stderr, code := h.run("version")
+	assert.Equal(t, 1, code)
+	assert.Empty(t, stdout)
+	assert.Contains(t, stderr, "not built for a release")
 }
 
 func TestTheGroupsHoldTheCommands(t *testing.T) {

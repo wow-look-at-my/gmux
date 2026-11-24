@@ -29,6 +29,9 @@ shows() {
 	gmux pane capture -t "$1"
 }
 
+# stamp prints one setting of the release a build wrote into the binary. It prints nothing for a build with no release.
+stamp() { grep -a -o "$(printf 'build\t%s=[0-9a-f]*' "$1")" "$work/gmux" | head -n 1 | cut -d= -f2; }
+
 eval "$1"
 status=$?
 gmux server kill >/dev/null 2>&1
