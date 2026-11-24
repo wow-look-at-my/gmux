@@ -66,6 +66,9 @@ func newHarness(t *testing.T) *harness {
 	return h
 }
 
+// unstamped makes the binary one that no release build filled. The harness already made the test serial.
+func (h *harness) unstamped() { Version = "" }
+
 // run executes one command line and returns what it printed.
 func (h *harness) run(args ...string) (stdout, stderr string, code int) {
 	var out, errOut bytes.Buffer
@@ -222,7 +225,7 @@ func TestVersionAndUsage(t *testing.T) {
 
 func TestABuildWithNoReleaseHasNoVersion(t *testing.T) {
 	h := newHarness(t)
-	Version = ""
+	h.unstamped()
 	stdout, stderr, code := h.run("version")
 	assert.Equal(t, 1, code)
 	assert.Empty(t, stdout)
