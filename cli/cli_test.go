@@ -253,6 +253,6 @@ func TestTheGroupsHoldTheCommands(t *testing.T) {
 func TestStartingTheServerFailsLoudly(t *testing.T) {
 	h := newHarness(t)
 	h.startErr = assert.AnError
-	h.fails(assert.AnError.Error(), "new", "-d")
-	h.fails(assert.AnError.Error(), "new")
+	h.fails(assert.AnError.Error(), "session", "new", "-d")
+	h.fails(assert.AnError.Error(), "session", "new")
 }
