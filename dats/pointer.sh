@@ -132,7 +132,7 @@ tab_closes_its_window() {
 # The cell at the right end of the window row leaves gmux, and the session keeps running.
 detach_cell_leaves_the_session() {
 	click 0 "$windows_row" "─" && shows outer "detached (from session demo)" | grep -c "detached (from session demo)" &&
-		"$work/gmux" -S "$work/inner.sock" ls
+		"$work/gmux" -S "$work/inner.sock" session list
 }
 
 # A program that takes the pointer gets the clicks in its pane, so no pane menu opens there. The menu of the
