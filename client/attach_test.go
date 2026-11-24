@@ -17,8 +17,8 @@ import (
 
 // TestMain lets the test binary stand in for the program a client starts as its server.
 func TestMain(m *testing.M) {
-	if len(os.Args) == 4 && os.Args[1] == "server" && os.Args[2] == "--socket" {
-		srv := server.New(server.Options{Socket: os.Args[3], NoStats: true, Mux: mux.Config{Shell: "/bin/sh"}})
+	if len(os.Args) == 5 && os.Args[1] == "server" && os.Args[2] == "run" && os.Args[3] == "--socket" {
+		srv := server.New(server.Options{Socket: os.Args[4], NoStats: true, Mux: mux.Config{Shell: "/bin/sh"}})
 		if err := srv.Listen(); err != nil {
 			os.Exit(1)
 		}

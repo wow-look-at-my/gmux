@@ -1,4 +1,4 @@
-// capture.go holds the capture-pane command.
+// pane_capture.go holds the pane capture command.
 
 package cli
 
@@ -12,7 +12,7 @@ import (
 var captureTarget string
 
 var captureCmd = &cobra.Command{
-	Use:   "capture-pane",
+	Use:   "capture",
 	Short: "Print the text on the active pane of a session",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, _ []string) error {
@@ -29,5 +29,5 @@ func init() {
 	captureCmd.Flags().StringVarP(&captureTarget, "target", "t", "", "session to read (default: the one used last)")
 	// tmux prints with -p and fills a buffer without it. This command always prints.
 	captureCmd.Flags().BoolP("print", "p", true, "print the text (always on)")
-	root.AddCommand(captureCmd)
+	paneCmd.AddCommand(captureCmd)
 }

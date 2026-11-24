@@ -1,4 +1,4 @@
-// kill_session.go holds the kill-session command.
+// session_kill.go holds the session kill command.
 
 package cli
 
@@ -10,7 +10,7 @@ import (
 var killSessionTarget string
 
 var killSessionCmd = &cobra.Command{
-	Use:   "kill-session",
+	Use:   "kill",
 	Short: "End a session and every program in it",
 	Args:  cobra.NoArgs,
 	RunE: func(*cobra.Command, []string) error {
@@ -21,5 +21,5 @@ var killSessionCmd = &cobra.Command{
 
 func init() {
 	killSessionCmd.Flags().StringVarP(&killSessionTarget, "target", "t", "", "session to end (default: the one used last)")
-	root.AddCommand(killSessionCmd)
+	sessionCmd.AddCommand(killSessionCmd)
 }

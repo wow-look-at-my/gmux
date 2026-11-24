@@ -39,7 +39,7 @@ func Start(socket, exe string) error {
 	}
 	defer log.Close()
 	// The program goes through a shell, because a portable executable is one a shell can start on every host.
-	cmd := exec.Command("/bin/sh", "-c", `exec "$0" "$@"`, exe, "server", "--socket", socket)
+	cmd := exec.Command("/bin/sh", "-c", `exec "$0" "$@"`, exe, "server", "run", "--socket", socket)
 	cmd.Stdout, cmd.Stderr = log, log
 	cmd.Dir = "/"
 	// A session of its own keeps the server alive when the terminal that started it closes.

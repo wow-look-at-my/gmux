@@ -1,4 +1,4 @@
-// ls.go holds the list-sessions command.
+// session_list.go holds the session list command.
 
 package cli
 
@@ -10,8 +10,8 @@ import (
 	"github.com/wow-look-at-my/go-tmux/server"
 )
 
-var lsCmd = &cobra.Command{
-	Use:     "list-sessions",
+var listCmd = &cobra.Command{
+	Use:     "list",
 	Aliases: []string{"ls"},
 	Short:   "List the sessions of the server",
 	Args:    cobra.NoArgs,
@@ -32,4 +32,4 @@ var lsCmd = &cobra.Command{
 	},
 }
 
-func init() { root.AddCommand(lsCmd) }
+func init() { sessionCmd.AddCommand(listCmd) }

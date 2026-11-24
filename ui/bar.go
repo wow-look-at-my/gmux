@@ -96,7 +96,7 @@ func (c *Client) buttons(info mux.SessionInfo) []chip {
 	}
 	cells = append(cells, chip{
 		id: idDetach, action: "detach", label: "─",
-		tip: "Detach: leave gmux. The session and its programs keep running, and gmux attach comes back to them",
+		tip: "Detach: leave gmux. The session and its programs keep running, and gmux session attach comes back to them",
 	})
 	for i := range cells {
 		cells[i].look = c.look(cells[i].id, "chip")

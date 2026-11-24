@@ -7,11 +7,16 @@ sandbox:
 	network: false
 
 tests:
-	- desc: help lists the commands
+	- desc: help lists the command groups and the version command
 	  cmd: dats/with-socket.sh 'gmux --help'
 	  exit: 0
 	  outputs:
 		stdout:
+			- "  session "
+			- "  server "
+			- "  pane "
+			- "  version "
+		"!stdout":
 			- "new-session"
 			- "attach-session"
 			- "list-sessions"
@@ -20,18 +25,50 @@ tests:
 			- "send-keys"
 			- "capture-pane"
 			- "rename-session"
+
+	- desc: each group lists its commands, and the server group hides the one a client starts the server with
+	  cmd: dats/with-socket.sh 'gmux session --help && gmux server --help && gmux pane --help'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "  new "
+			- "  attach "
+			- "  rename "
+			- "  kill "
+			- "  list "
+			- "  send "
+			- "  capture "
 		"!stdout":
-			- "  server "
+			- "  run "
+
+	- desc: a word that names no command of a group is an error
+	  cmd: dats/with-socket.sh 'gmux session dance'
+	  exit: 1
+	  outputs:
+		stderr:
+			- 'unknown command "dance" for "gmux session"'
+
+	- desc: a name the commands had before the groups is no command
+	  cmd: dats/with-socket.sh 'gmux list-sessions'
+	  exit: 1
+	  outputs:
+		stderr:
+			- 'unknown command "list-sessions" for "gmux"'
+
+	# A release build stamps the binary. A build outside CI does not, and its binary has no version to print.
+	- desc: version prints the release and the commit the build stamped, and a build with no release says so
+	  cmd: dats/with-socket.sh 'want="1 gmux: this binary was not built for a release, so it has no version"; [ -n "$(stamp release)" ] && want="0 gmux version $(stamp release) ($(stamp release.revision))"; out=$(gmux version 2>&1); got="$? $out"; echo "got:  $got"; echo "want: $want"; [ "$got" = "$want" ]'
+	  exit: 0
 
 	- desc: listing with no server says none is running
-	  cmd: dats/with-socket.sh 'gmux ls'
+	  cmd: dats/with-socket.sh 'gmux session list'
 	  exit: 1
 	  outputs:
 		stderr:
 			- "no server is running"
 
 	- desc: a detached session starts the server and shows in the listing
-	  cmd: dats/with-socket.sh 'gmux new-session -d -s work && gmux ls'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s work && gmux session list'
 	  exit: 0
 	  outputs:
 		stdout:
@@ -40,7 +77,7 @@ tests:
 			- "(attached)"
 
 	- desc: a session with no name takes the name of its directory, and a second one a number after it
-	  cmd: dats/with-socket.sh 'mkdir "$work/site" && cd "$work/site" && gmux new -d && gmux new -d && cd / && gmux new -d && gmux ls'
+	  cmd: dats/with-socket.sh 'mkdir "$work/site" && cd "$work/site" && gmux session new -d && gmux session new -d && cd / && gmux session new -d && gmux session list'
 	  exit: 0
 	  outputs:
 		stdout:
@@ -51,21 +88,21 @@ tests:
 			- "(attached)"
 
 	- desc: keys sent to a session reach its shell, and the pane can be read back
-	  cmd: dats/with-socket.sh 'gmux new -d -s t && gmux send-keys -t t "echo dats-\$((40+2))" Enter && shows t dats-42'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s t && gmux pane send -t t "echo dats-\$((40+2))" Enter && shows t dats-42'
 	  exit: 0
 	  outputs:
 		stdout:
 			- "dats-42"
 
 	- desc: a pane's program sees a terminal and the multiplexer's variables
-	  cmd: dats/with-socket.sh 'gmux new -d -s t && gmux send-keys -t t "test -t 0 && echo term=\$TERM pane=\$GMUX_PANE" Enter && shows t pane=1'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s t && gmux pane send -t t "test -t 0 && echo term=\$TERM pane=\$GMUX_PANE" Enter && shows t pane=1'
 	  exit: 0
 	  outputs:
 		stdout:
 			- "term=xterm-256color pane=1"
 
 	- desc: a session runs the command it is given, and ends with it
-	  cmd: dats/with-socket.sh 'gmux new -d -s once -- /bin/sh -c "sleep 0.3" && gmux ls && sleep 1; gmux ls'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s once -- /bin/sh -c "sleep 0.3" && gmux session list && sleep 1; gmux session list'
 	  exit: 1
 	  outputs:
 		stdout:
@@ -74,14 +111,14 @@ tests:
 			- "no server is running"
 
 	- desc: a second session cannot take a name in use
-	  cmd: dats/with-socket.sh 'gmux new -d -s same && gmux new -d -s same'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s same && gmux session new -d -s same'
 	  exit: 1
 	  outputs:
 		stderr:
 			- 'a session named "same" already exists'
 
 	- desc: a session is renamed and then ended by its new name
-	  cmd: dats/with-socket.sh 'gmux new -d -s old && gmux new -d -s keep && gmux rename-session -t old new && gmux ls && gmux kill-session -t new && echo after && gmux ls'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s old && gmux session new -d -s keep && gmux session rename -t old new && gmux session list && gmux session kill -t new && echo after && gmux session list'
 	  exit: 0
 	  outputs:
 		stdout:
@@ -89,14 +126,14 @@ tests:
 			- "after\nkeep: 1 windows"
 
 	- desc: a target that names no session is an error
-	  cmd: dats/with-socket.sh 'gmux new -d -s real && gmux capture-pane -t ghost'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s real && gmux pane capture -t ghost'
 	  exit: 1
 	  outputs:
 		stderr:
 			- 'no session named "ghost"'
 
-	- desc: kill-server ends the server
-	  cmd: dats/with-socket.sh 'gmux new -d && gmux kill-server && gmux ls'
+	- desc: server kill ends the server
+	  cmd: dats/with-socket.sh 'gmux session new -d && gmux server kill && gmux session list'
 	  exit: 1
 	  outputs:
 		stderr:
@@ -213,14 +250,14 @@ tests:
 			- "1\n1"
 
 	- desc: attaching without a terminal is refused
-	  cmd: dats/with-socket.sh 'gmux new -d -s t && gmux attach -t t </dev/null'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s t && gmux session attach -t t </dev/null'
 	  exit: 1
 	  outputs:
 		stderr:
 			- "attaching needs a terminal"
 
 	- desc: an attach from inside a session is refused
-	  cmd: dats/with-socket.sh 'gmux new -d -s t && GMUX=inside gmux attach -t t'
+	  cmd: dats/with-socket.sh 'gmux session new -d -s t && GMUX=inside gmux session attach -t t'
 	  exit: 1
 	  outputs:
 		stderr:

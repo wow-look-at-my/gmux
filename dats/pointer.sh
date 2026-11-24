@@ -4,17 +4,17 @@
 
 # inner_start attaches a gmux to the outer session's pane and waits for its bars.
 inner_start() {
-	gmux new -d -s outer || return 1
-	gmux send-keys -t outer "GMUX= $work/gmux -S $work/inner.sock new -s demo" Enter || return 1
+	gmux session new -d -s outer || return 1
+	gmux pane send -t outer "GMUX= $work/gmux -S $work/inner.sock session new -s demo" Enter || return 1
 	shows outer " demo  1:sh " >/dev/null
 }
 
-inner_stop() { "$work/gmux" -S "$work/inner.sock" kill-server >/dev/null 2>&1; }
+inner_stop() { "$work/gmux" -S "$work/inner.sock" server kill >/dev/null 2>&1; }
 
 # gone waits until the active pane of a session no longer holds a text.
 gone() {
 	tries=0
-	while gmux capture-pane -t "$1" | grep -q -- "$2"; do
+	while gmux pane capture -t "$1" | grep -q -- "$2"; do
 		tries=$((tries + 1))
 		if [ "$tries" -gt 100 ]; then
 			echo "the pane of $1 still shows $2" >&2
@@ -37,7 +37,7 @@ windows_row=1
 info_row=24
 
 # row prints one row of what the inner gmux drew.
-row() { gmux capture-pane -t outer | sed -n "${1}p"; }
+row() { gmux pane capture -t outer | sed -n "${1}p"; }
 
 # column prints the cell of a row where a text starts. The cell counts from one, as a pointer report does.
 column() {
@@ -54,7 +54,7 @@ column() {
 }
 
 # report types one pointer report the way a terminal sends it: a code, a cell, a row, and M or m.
-report() { gmux send-keys -l -t outer "$(printf '\033[<%d;%d;%d%s' "$1" "$2" "$3" "$4")"; }
+report() { gmux pane send -l -t outer "$(printf '\033[<%d;%d;%d%s' "$1" "$2" "$3" "$4")"; }
 
 # click presses and releases a button on a text of a row.
 click() {
@@ -83,13 +83,13 @@ drag() {
 size() { row "$info_row" | grep -o '[0-9]*×[0-9]*'; }
 
 # marked types a command that prints a mark, and waits for the mark.
-marked() { gmux send-keys -t outer "echo $1" Enter && shows outer "^$1" >/dev/null; }
+marked() { gmux pane send -t outer "echo $1" Enter && shows outer "^$1" >/dev/null; }
 
 add_window() { click 0 "$windows_row" "+" && shows outer " $1:sh " >/dev/null; }
 
 # item clicks an item of the open menu by its text.
 item() {
-	line=$(gmux capture-pane -t outer | grep -n -- "$1" | head -n 1 | cut -d: -f1)
+	line=$(gmux pane capture -t outer | grep -n -- "$1" | head -n 1 | cut -d: -f1)
 	if [ -z "$line" ]; then
 		echo "the open menu has no item $1" >&2
 		return 1
@@ -113,7 +113,7 @@ click_adds_window() {
 
 # The window row is the first row of what gmux draws, and the information row is the last.
 bars_at_both_ends() {
-	gmux capture-pane -t outer | sed -n '1p' | grep -c "≡  demo  1:sh ×  +" | sed 's/^/top: /'
+	gmux pane capture -t outer | sed -n '1p' | grep -c "≡  demo  1:sh ×  +" | sed 's/^/top: /'
 	row "$info_row" | grep -c "MEM " | sed 's/^/bottom: /'
 }
 
@@ -132,17 +132,17 @@ tab_closes_its_window() {
 # The cell at the right end of the window row leaves gmux, and the session keeps running.
 detach_cell_leaves_the_session() {
 	click 0 "$windows_row" "─" && shows outer "detached (from session demo)" | grep -c "detached (from session demo)" &&
-		"$work/gmux" -S "$work/inner.sock" ls
+		"$work/gmux" -S "$work/inner.sock" session list
 }
 
 # A program that takes the pointer gets the clicks in its pane, so no pane menu opens there. The menu of the
 # window row still splits the window.
 menu_splits_under_a_program_with_the_pointer() {
 	whole=$(size)
-	gmux send-keys -t outer "printf '\\033[?1000h\\033[?1006h'; echo has-the-pointer; cat -v" Enter || return 1
+	gmux pane send -t outer "printf '\\033[?1000h\\033[?1006h'; echo has-the-pointer; cat -v" Enter || return 1
 	shows outer "^has-the-pointer" >/dev/null || return 1
 	report 2 30 6 M && report 2 30 6 m && shows outer "\\^\\[\\[<2;30;5M" >/dev/null || return 1
-	echo "pane menu: $(gmux capture-pane -t outer | grep -c "Even out panes")"
+	echo "pane menu: $(gmux pane capture -t outer | grep -c "Even out panes")"
 	menu "Split right" && gone outer " $whole " && echo "split: $(size)"
 }
 
@@ -151,7 +151,7 @@ menu_splits_under_a_program_with_the_pointer() {
 tooltip_after_a_rest() {
 	x=$(column "$windows_row" "+") || return 1
 	report 35 "$x" "$windows_row" M || return 1
-	echo "at once: $(gmux capture-pane -t outer | grep -c " New window")"
+	echo "at once: $(gmux pane capture -t outer | grep -c " New window")"
 	shows outer " New window" | grep -c " New window" | sed 's/^/after a rest: /'
 	report 35 40 10 M && gone outer " New window" && echo "after a move: gone"
 }
@@ -159,7 +159,7 @@ tooltip_after_a_rest() {
 tab_menu_and_switch() {
 	marked first-window && add_window 2 &&
 		click 2 "$windows_row" "1:sh" && shows outer "Move right" | grep -c "Move right" &&
-		gmux send-keys -t outer Escape && gone outer "Move right" &&
+		gmux pane send -t outer Escape && gone outer "Move right" &&
 		click 0 "$windows_row" "1:sh" && shows outer "^first-window" | grep -c "^first-window"
 }
 
@@ -188,7 +188,7 @@ middle_click_closes_window() {
 
 # A window takes the name of the program in front, so both tabs can be told apart.
 drag_moves_window() {
-	add_window 2 && gmux send-keys -t outer "sleep 300" Enter && shows outer " 1:sh ×  2:sleep × " >/dev/null &&
+	add_window 2 && gmux pane send -t outer "sleep 300" Enter && shows outer " 1:sh ×  2:sleep × " >/dev/null &&
 		drag "$windows_row" "2:sleep" "1:sh" && shows outer " 1:sleep ×  2:sh × " >/dev/null && row "$windows_row"
 }
 
@@ -203,17 +203,17 @@ pane_menu_fits() {
 reflow_on_resize() {
 	head=01234567890123456789012345678901234567
 	tail=8901234567890123456789
-	gmux send-keys -t outer "echo $head$tail" Enter && shows outer "^$head$tail\$" >/dev/null || return 1
+	gmux pane send -t outer "echo $head$tail" Enter && shows outer "^$head$tail\$" >/dev/null || return 1
 	menu "Split right" && shows outer "^$tail " >/dev/null || return 1
-	echo "cut: $(gmux capture-pane -t outer | grep -c "^$head[^0-9]") then $(gmux capture-pane -t outer | grep -c "^$tail ")"
+	echo "cut: $(gmux pane capture -t outer | grep -c "^$head[^0-9]") then $(gmux pane capture -t outer | grep -c "^$tail ")"
 	menu "Close pane" && shows outer "^$head$tail\$" | grep -c "^$head$tail\$" | sed 's/^/whole: /'
 }
 
 # A pane shows a scrollbar once it has history to scroll back to. The thumb is the only full block on screen.
 scrollbar_shows() {
-	echo "before $(gmux capture-pane -t outer | grep -c "█")"
-	gmux send-keys -t outer "seq 1 60" Enter && shows outer "^60" >/dev/null || return 1
-	after=$(gmux capture-pane -t outer | grep -c "│ *█\|█$")
+	echo "before $(gmux pane capture -t outer | grep -c "█")"
+	gmux pane send -t outer "seq 1 60" Enter && shows outer "^60" >/dev/null || return 1
+	after=$(gmux pane capture -t outer | grep -c "│ *█\|█$")
 	[ "$after" -gt 0 ] && echo "after: a thumb at the right edge"
 }
 
