@@ -27,7 +27,7 @@ It tidies, vets, runs the Go tests with coverage, builds `build/gmux` and runs `
 - `ui/` — one attached client: `assets/screen.tml`, the pane widget, keys, pointer, menus.
 - `server/` — the socket protocol, the requests, the attach.
 - `client/` — find or start the server, hand the terminal over.
-- `cli/` — cobra commands, one self-registering command per file. A command is `gmux <group> <verb>`.
+- `cli/` — cobra commands, one self-registering command per file. A command is `gmux <group> <verb>`. A file is named `<group>_<verb>.go`.
 - `internal/ttytest/` — a pty as a client's terminal, read back through `vt`, for tests.
 
 ## Invariants
