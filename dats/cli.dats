@@ -249,6 +249,20 @@ tests:
 		stdout:
 			- "1\n1"
 
+	- desc: a click on a reading of the host opens a box of graphs, and the pane under it keeps the keys
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene stats_box'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "before: 0\nbox rows: 4\nkeys: the pane\nstill open: 1\nclosed"
+
+	- desc: a reading of the host keeps its cells while samples arrive
+	  cmd: dats/with-socket.sh '. dats/pointer.sh && scene readings_hold_still'
+	  exit: 0
+	  outputs:
+		stdout:
+			- "fixed cells: 1\nmoved: 0"
+
 	- desc: attaching without a terminal is refused
 	  cmd: dats/with-socket.sh 'gmux session new -d -s t && gmux session attach -t t </dev/null'
 	  exit: 1

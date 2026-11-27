@@ -93,7 +93,7 @@ func Format(snap *client.Snapshot) Bar {
 	}
 	if cpu, count, ok := processor(snap); ok {
 		bar.CPU = percent(cpu.Value / count)
-		bar.CPUHistory = last(history(cpu, count), barHistory)
+		bar.CPUHistory = full(history(cpu, count), barHistory)
 	}
 	if used, total, ok := pair(snap, client.RAMUsed, client.RAMTotal); ok && total > 0 {
 		bar.Mem = Fixed(used) + "/" + Bytes(total)
@@ -163,6 +163,11 @@ func Detail(snap *client.Snapshot) []Row {
 	if up, ok := snap.Value(client.SystemUptime); ok {
 		rows = append(rows, Row{Label: "UP", Text: Uptime(up)})
 	}
+	for i := range rows {
+		if len(rows[i].History) > 0 {
+			rows[i].History = full(rows[i].History, historyLen)
+		}
+	}
 	return rows
 }
 
@@ -214,12 +219,17 @@ func history(m client.Metric, scale float64) []string {
 	return append(values, strconv.FormatFloat(m.Value/scale, 'f', 1, 64))
 }
 
-// last is the newest n of a list of values.
-func last(values []string, n int) []string {
-	if len(values) > n {
+// full is the newest n of a list of values. A list with fewer gets zeros ahead of it. A graph of it has its
+// whole width from the first sample on and the newest value at its right end.
+func full(values []string, n int) []string {
+	if len(values) >= n {
 		return values[len(values)-n:]
 	}
-	return values
+	padded := make([]string, n-len(values), n)
+	for i := range padded {
+		padded[i] = "0"
+	}
+	return append(padded, values...)
 }
 
 // percent writes a share in cells, whatever its value.

@@ -26,12 +26,35 @@ func snapshot() *client.Snapshot {
 	}}
 }
 
+// graph is a history as a graph of some width draws it: zeros ahead of the samples there are.
+func graph(width int, samples ...string) []string {
+	values := make([]string, width-len(samples), width)
+	for i := range values {
+		values[i] = "0"
+	}
+	return append(values, samples...)
+}
+
 func TestFormatWritesEachReadingShort(t *testing.T) {
 	bar := Format(snapshot())
 	assert.Equal(t, Bar{
-		CPU: " 12%", CPUHistory: []string{"5.2", "40.0", "12.4"}, Mem: "3.2G/16G", Net: "↓1.2K ↑300B",
+		CPU: " 12%", CPUHistory: graph(barHistory, "5.2", "40.0", "12.4"), Mem: "3.2G/16G", Net: "↓1.2K ↑300B",
 		GPU: " 88% 6.0G",
 	}, bar)
+}
+
+func TestAGraphHasItsWholeWidthFromTheFirstSample(t *testing.T) {
+	long := make([]float64, 3*historyLen)
+	for _, history := range [][]float64{nil, {1}, long} {
+		snap := &client.Snapshot{Metrics: map[string]client.Metric{
+			client.CPUPercent: {Value: 50, History: history},
+			client.CPUCount:   {Value: 1},
+		}}
+		bar := Format(snap)
+		assert.Len(t, bar.CPUHistory, barHistory)
+		assert.Equal(t, "50.0", bar.CPUHistory[barHistory-1], "the newest value is at the right end")
+		assert.Len(t, Detail(snap)[0].History, historyLen)
+	}
 }
 
 func TestAReadingKeepsItsWidthWhileItsValueChanges(t *testing.T) {
@@ -75,7 +98,9 @@ func TestDetailWritesEachReadingWithItsHistory(t *testing.T) {
 		labels = append(labels, row.Label)
 	}
 	assert.Equal(t, []string{"CPU", "MEM", "SWAP", "GPU", "VRAM", "NET ↓", "NET ↑", "DISK", "LOAD", "UP"}, labels)
-	assert.Equal(t, Row{Label: "CPU", History: []string{"5.2", "40.0", "12.4"}, Max: 100, Text: " 12% of 16 cores"}, rows["CPU"])
+	assert.Equal(t, Row{
+		Label: "CPU", History: graph(historyLen, "5.2", "40.0", "12.4"), Max: 100, Text: " 12% of 16 cores",
+	}, rows["CPU"])
 	assert.Equal(t, "3.2G of 16G  20%", rows["MEM"].Text)
 	assert.Equal(t, float64(16*(1<<30)), rows["MEM"].Max)
 	assert.Equal(t, "512M of 2.0G  25%", rows["SWAP"].Text)
@@ -125,7 +150,7 @@ func TestTheProcessorLoadIsAShareOfTheWholeHost(t *testing.T) {
 	}}
 	bar := Format(busy)
 	assert.Equal(t, " 94%", bar.CPU)
-	assert.Equal(t, []string{"0.0", "100.0", "93.8"}, bar.CPUHistory, "the graph's scale ends at a hundred")
+	assert.Equal(t, graph(barHistory, "0.0", "100.0", "93.8"), bar.CPUHistory, "the graph's scale ends at a hundred")
 
 	uncounted := &client.Snapshot{Metrics: map[string]client.Metric{client.CPUPercent: {Value: 1500}}}
 	assert.Empty(t, Format(uncounted).CPU, "a load with no processor count has no scale")
