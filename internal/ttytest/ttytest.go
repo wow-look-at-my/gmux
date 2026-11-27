@@ -54,6 +54,11 @@ func Open(t testing.TB, cols, rows int) *Screen {
 	return s
 }
 
+// Hangup takes the terminal away, the way a closed window does. The client's end stays open and stops working.
+func (s *Screen) Hangup() {
+	_ = s.master.Close()
+}
+
 // Feed draws bytes on the screen, as if the program on the terminal had written them.
 func (s *Screen) Feed(b []byte) {
 	s.mu.Lock()

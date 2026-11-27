@@ -165,9 +165,13 @@ func (c *Client) Start(p *tml.Program) (stop func()) {
 	c.stop = func() {
 		unwatch()
 		cancelTick()
+		c.leave()
 	}
 	return c.stop
 }
+
+// leave takes this client's size out of its session.
+func (c *Client) leave() { c.mux.Detach(c.shown(), c.id) }
 
 // Wake asks the program for a frame, which is also when it reads its terminal's size again.
 func (c *Client) Wake(p *tml.Program) { p.Send(frameMsg{}) }
@@ -255,7 +259,7 @@ func (c *Client) quit(p *tml.Program, why Outcome) {
 	}
 	c.quitting = true
 	c.outcome = why
-	c.mux.Detach(c.session, c.id)
+	c.leave()
 	if c.stop != nil {
 		c.stop()
 	}

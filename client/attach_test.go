@@ -136,6 +136,20 @@ func TestAttachDrawsTheSessionOnTheTerminalAndDetachGivesItBack(t *testing.T) {
 	}
 }
 
+func TestATerminalThatGoesAwayStopsCountingForTheSize(t *testing.T) {
+	_, socket := serve(t)
+	small := ttytest.Open(t, 80, 24)
+	attach(socket, server.Request{Create: true, Name: "shared", Env: env()}, small)
+	small.Shows("79×22")
+
+	big := ttytest.Open(t, 120, 40)
+	attach(socket, server.Request{Target: "shared"}, big)
+	big.Shows("79×22")
+
+	small.Hangup()
+	big.Shows("119×38")
+}
+
 func TestAttachEndsWhenTheServerCloses(t *testing.T) {
 	srv, socket := serve(t)
 	term := ttytest.Open(t, 80, 20)
