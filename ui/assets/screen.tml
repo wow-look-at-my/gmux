@@ -174,7 +174,7 @@
 
 			<!-- The detail view of the host stands over the window, in the corner over the readings. It takes no key. -->
 			<Popup id="stats-box" title="host" style="menu" width="{statsWidth}" if="{statsOpen}"
-				Canvas.anchor="bottomRight" Canvas.x="0" Canvas.y="-1">
+				Canvas.anchor="bottomRight" Canvas.x="0" Canvas.y="1">
 				<Stack itemsSource="{statRows}" itemTemplate="StatRow"/>
 			</Popup>
 

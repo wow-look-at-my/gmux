@@ -21,8 +21,9 @@ func TestAClickOnAReadingOpensTheDetailView(t *testing.T) {
 		assert.Contains(t, shown, text)
 	}
 	// Each row with a history draws it as a graph. The row with none draws no graph.
-	assert.Contains(t, shown, "▁▄▁")
-	assert.Contains(t, shown, "▁█▄")
+	assert.Contains(t, shown, "CPU    ▁▃▁ ")
+	assert.Contains(t, shown, "NET ↓  ▁█▅ ")
+	assert.Contains(t, shown, "UP      ")
 
 	box, ok := r.client.View().UI().Target(statsID)
 	require.True(t, ok)
