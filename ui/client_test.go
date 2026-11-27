@@ -132,23 +132,27 @@ func TestDetachLeavesTheSessionRunning(t *testing.T) {
 	assert.Zero(t, info.Attached)
 }
 
-func TestTheClientLeavesWhenItsLastSessionEnds(t *testing.T) {
+func TestTheClientLeavesWhenItsSessionEnds(t *testing.T) {
 	r := newRig(t, 80, 12)
 	other, err := r.mux.NewSession(mux.SessionOptions{Name: "other"})
 	require.NoError(t, err)
+	gone, err := r.mux.NewSession(mux.SessionOptions{Name: "gone"})
+	require.NoError(t, err)
 
-	r.send(endedMsg{session: other})
+	r.mux.KillSession(gone)
+	r.send(endedMsg{session: gone})
 	assert.Same(t, r.session, r.client.Session(), "another session ending changes nothing")
+	assert.False(t, r.client.quitting)
 
-	r.mux.KillSession(r.session)
+	// Closing the last tab ends the session, and the client ends with it though another session runs.
+	r.mux.KillWindow(r.session, 0)
+	r.eventually(func() bool { _, alive := r.mux.Info(r.session); return !alive }, "the session never ended")
 	r.send(endedMsg{session: r.session})
-	assert.Same(t, other, r.client.Session(), "the client moves to a session that still runs")
-	windows, _ := r.bars()
-	assert.Contains(t, windows, " other ")
-
-	r.mux.KillSession(other)
-	r.send(endedMsg{session: other})
+	assert.True(t, r.client.quitting)
 	assert.Equal(t, SessionEnded, r.client.Outcome())
+	assert.Same(t, r.session, r.client.Session(), "the client does not move to the session that is left")
+	_, alive := r.mux.Info(other)
+	assert.True(t, alive)
 }
 
 func TestTheServerClosingEndsTheClient(t *testing.T) {

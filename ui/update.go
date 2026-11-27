@@ -44,17 +44,11 @@ func (c *Client) Update(p *tml.Program, msg tml.Msg) bool {
 	return false
 }
 
-// ended moves the client off a session that ended: to another session when one is left, else out.
+// ended ends the client with its session. The other sessions stay, and the client does not move to one.
 func (c *Client) ended(p *tml.Program, s *mux.Session) {
-	if s != c.session {
-		return
-	}
-	next, err := c.mux.Find("")
-	if err != nil {
+	if s == c.session {
 		c.quit(p, SessionEnded)
-		return
 	}
-	c.show(next)
 }
 
 // key routes one key press.
