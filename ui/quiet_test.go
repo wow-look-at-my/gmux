@@ -4,6 +4,7 @@ package ui
 
 import (
 	"io"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -99,4 +100,20 @@ func TestThePointerMovingOverTheWindowCostsNoFrame(t *testing.T) {
 	r.types(t, "z", 4)
 	r.arrived(t, "zzzz")
 	assertFewFrames(t, r.app.frames.Load()-before, count, "the pointer")
+}
+
+func TestThePointerMovingThroughAMenuPaintsEachItem(t *testing.T) {
+	r := run(t)
+	// A click on the menu cell of the window row opens the menu under it.
+	r.types(t, "\x1b[<0;2;1M", 1)
+	r.types(t, "\x1b[<0;2;1m", 1)
+	const count = 40
+	before := r.app.frames.Load()
+	// The pointer goes from one item to the next and back, with no button held.
+	for i := range count {
+		r.types(t, "\x1b[<35;4;"+strconv.Itoa(4+i%2)+"M", 1)
+	}
+	// The clock alone paints one frame each second, which is far under this.
+	require.Eventually(t, func() bool { return r.app.frames.Load()-before >= count*3/4 }, 2*time.Second,
+		5*time.Millisecond, "the mark did not follow the pointer: %d frames for %d moves", r.app.frames.Load()-before, count)
 }

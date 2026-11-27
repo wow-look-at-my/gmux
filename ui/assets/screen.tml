@@ -6,7 +6,7 @@
 	<Property name="tabs" type="record[]" default=""/>
 	<Property name="actions" type="record[]" default=""/>
 
-	<Property name="infoColumns" type="string" default="auto,*,auto,auto,auto,*,auto,auto,auto,auto,auto,auto"/>
+	<Property name="infoColumns" type="string" default="auto,*,auto,auto,auto,*,auto,auto,auto,auto,auto"/>
 	<Property name="mode" type="string" default=""/>
 	<Property name="dir" type="string" default=""/>
 	<Property name="command" type="string" default=""/>
@@ -17,8 +17,10 @@
 	<Property name="cpuHistory" type="string[]" default=""/>
 	<Property name="mem" type="string" default=""/>
 	<Property name="net" type="string" default=""/>
-	<Property name="load" type="string" default=""/>
 	<Property name="gpu" type="string" default=""/>
+	<Property name="statsOpen" type="bool" default="false"/>
+	<Property name="statsWidth" type="int" default="64"/>
+	<Property name="statRows" type="record[]" default=""/>
 	<Property name="clock" type="string" default=""/>
 
 	<Property name="menuLook" type="string" default="chip"/>
@@ -66,6 +68,21 @@
 		</Template>
 	</DataTemplate>
 
+	<!-- One reading of the detail view of the host: its name, a graph of its recent values, and the value in words. -->
+	<DataTemplate name="StatRow">
+		<Property name="label" type="string" required="true"/>
+		<Property name="values" type="string[]" default=""/>
+		<Property name="max" type="string" default="0"/>
+		<Property name="text" type="string" default=""/>
+		<Template>
+			<Grid columns="6,30,*" gap="1">
+				<Text Grid.column="0" style="dim" overflow="clip">{label}</Text>
+				<Sparkline Grid.column="1" values="{values}" max="{max}" color="{theme.accent}"/>
+				<Text Grid.column="2" overflow="clip">{text}</Text>
+			</Grid>
+		</Template>
+	</DataTemplate>
+
 	<DataTemplate name="HelpLine">
 		<Property name="key" type="string" required="true"/>
 		<Property name="what" type="string" required="true"/>
@@ -102,7 +119,7 @@
 
 				<!-- The columns give way in the order collapse names them, so a narrow terminal keeps the directory
 				     and the clock longest. The directory's column is cut to the room there is. -->
-				<Grid id="bar-info" Grid.row="2" style="bar" columns="{infoColumns}" collapse="10,9,8,3,2,7,6,11">
+				<Grid id="bar-info" Grid.row="2" style="bar" columns="{infoColumns}" collapse="9,8,3,2,7,6,10">
 					<Box Grid.column="0" style="chip.mode" if="{mode}">
 						<Text overflow="clip">{mode}</Text>
 					</Box>
@@ -120,7 +137,7 @@
 						<Text overflow="clip">{note}</Text>
 					</Box>
 					<Hit id="stat-cpu" action="stats" Grid.column="6" style="chip" if="{cpu}"
-						tooltip="Processor use of the whole host. Click for more detail">
+						tooltip="Processor use of the whole host. Click to show or hide the detail view">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">CPU</Text>
 							<Sparkline values="{cpuHistory}" max="100" color="{theme.accent}"/>
@@ -128,39 +145,38 @@
 						</Stack>
 					</Hit>
 					<Hit id="stat-mem" action="stats" Grid.column="7" style="chip" if="{mem}"
-						tooltip="Memory in use. Click for more detail">
+						tooltip="Memory in use. Click to show or hide the detail view">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">MEM</Text>
 							<Text overflow="clip">{mem}</Text>
 						</Stack>
 					</Hit>
 					<Hit id="stat-gpu" action="stats" Grid.column="8" style="chip" if="{gpu}"
-						tooltip="Graphics processor use. Click for more detail">
+						tooltip="Graphics processor use. Click to show or hide the detail view">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">GPU</Text>
 							<Text overflow="clip">{gpu}</Text>
 						</Stack>
 					</Hit>
 					<Hit id="stat-net" action="stats" Grid.column="9" style="chip" if="{net}"
-						tooltip="Network traffic, down and up. Click for more detail">
+						tooltip="Network traffic, down and up. Click to show or hide the detail view">
 						<Stack orientation="horizontal" gap="1">
 							<Text style="dim">NET</Text>
 							<Text overflow="clip">{net}</Text>
 						</Stack>
 					</Hit>
-					<Hit id="stat-load" action="stats" Grid.column="10" style="chip" if="{load}"
-						tooltip="Load average. Click for more detail">
-						<Stack orientation="horizontal" gap="1">
-							<Text style="dim">LOAD</Text>
-							<Text overflow="clip">{load}</Text>
-						</Stack>
-					</Hit>
-					<Hit id="clock" action="clock" Grid.column="11" style="chip" if="{clock}"
+					<Hit id="clock" action="clock" Grid.column="10" style="chip" if="{clock}"
 						tooltip="Click to show the date">
 						<Text overflow="clip">{clock}</Text>
 					</Hit>
 				</Grid>
 			</Grid>
+
+			<!-- The detail view of the host stands over the window, in the corner over the readings. It takes no key. -->
+			<Popup id="stats-box" title="host" style="menu" width="{statsWidth}" if="{statsOpen}"
+				Canvas.anchor="bottomRight" Canvas.x="0" Canvas.y="-1">
+				<Stack itemsSource="{statRows}" itemTemplate="StatRow"/>
+			</Popup>
 
 			<Menu id="menu" action="menu" title="{menuTitle}" items="{menuItems}" selected="{menuSelected}"
 				accent="{theme.accent}" accentText="{theme.accentText}" style="menu" if="{menuOpen}"
