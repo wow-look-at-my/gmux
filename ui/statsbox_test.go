@@ -20,9 +20,11 @@ func TestAClickOnAReadingOpensTheDetailView(t *testing.T) {
 	for _, text := range []string{"host", "CPU", "of 16 cores", "NET ↓", "1.2K/s", "0.52 0.40 0.31", "3d 4h"} {
 		assert.Contains(t, shown, text)
 	}
-	// Each row with a history draws it as a graph. The row with none draws no graph.
-	assert.Contains(t, shown, "CPU    ▁▃▁ ")
-	assert.Contains(t, shown, "NET ↓  ▁█▅ ")
+	// Each row with a history draws it as a graph a pair of rows tall. The row with none draws no graph.
+	assert.Contains(t, shown, "│ CPU        ")
+	assert.Contains(t, shown, "│        ▁▇▂ ")
+	assert.Contains(t, shown, "│ NET ↓   █▂ ")
+	assert.Contains(t, shown, "│        ▁██ ")
 	assert.Contains(t, shown, "UP      ")
 
 	box, ok := r.client.View().UI().Target(statsID)
@@ -45,6 +47,15 @@ func TestAClickOnAReadingOpensTheDetailView(t *testing.T) {
 	r.mouse(input.Press, input.ButtonLeft, x, y)
 	assert.Equal(t, dragNone, r.client.drag.kind, "a press on the box selects nothing in the pane under it")
 	assert.NotContains(t, screen(), "of 16 cores")
+}
+
+func TestTheGraphsOfTheDetailViewTakeOneRowOnAShortTerminal(t *testing.T) {
+	r := newRig(t, 120, 9)
+	r.client.statsOpen = true
+	shown := strings.Join(r.lines(), "\n")
+	assert.Contains(t, shown, "│ CPU    ▁▃▁ ")
+	assert.Contains(t, shown, "│ NET ↓  ▁█▅ ")
+	assert.Contains(t, shown, "3d 4h", "every reading still shows")
 }
 
 func TestTheDetailViewFitsANarrowTerminal(t *testing.T) {

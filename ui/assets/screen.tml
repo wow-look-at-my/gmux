@@ -74,10 +74,11 @@
 		<Property name="values" type="string[]" default=""/>
 		<Property name="max" type="string" default="0"/>
 		<Property name="text" type="string" default=""/>
+		<Property name="rows" type="int" default="1"/>
 		<Template>
 			<Grid columns="6,30,*" gap="1">
 				<Text Grid.column="0" style="dim" overflow="clip">{label}</Text>
-				<Sparkline Grid.column="1" values="{values}" max="{max}" color="{theme.accent}"/>
+				<Sparkline Grid.column="1" values="{values}" max="{max}" height="{rows}" color="{theme.accent}"/>
 				<Text Grid.column="2" overflow="clip">{text}</Text>
 			</Grid>
 		</Template>
