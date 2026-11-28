@@ -293,14 +293,8 @@ func TestTabsThatDoNotFitStandBehindOneCell(t *testing.T) {
 
 func TestTheInformationRowAnswersClicks(t *testing.T) {
 	r := newRig(t, 120, 12)
-	_, info := r.bars()
-	assert.Contains(t, info, "LOAD 0.52 ")
-	r.clickOn("stat-load")
-	_, info = r.bars()
-	assert.Contains(t, info, "LOAD 0.52 0.40 0.31")
-
 	r.clickOn("clock")
-	_, info = r.bars()
+	_, info := r.bars()
 	assert.Contains(t, info, "Wed 4 Mar 15:04:05")
 
 	r.clickOn("dir")

@@ -208,7 +208,7 @@ func (c *Client) actClient(p *tml.Program, name, arg string, x, y int) {
 		c.help = true
 		c.menu, c.ask = nil, nil
 	case "stats":
-		c.detail = !c.detail
+		c.statsOpen = !c.statsOpen
 	case "clock":
 		c.longClock = !c.longClock
 	}

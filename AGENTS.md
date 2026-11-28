@@ -40,6 +40,9 @@ It tidies, vets, runs the Go tests with coverage, builds `build/gmux` and runs `
 - The bars never give a click to a pane's program. Everything a pane's menu does is also in the menu of the window row (`Client.mainMenu`), for a program that takes the pointer.
 - A colour is a `<Color>` of `ui/assets/theme.tml` with a `for` that says what it is used for. Nothing else names a colour: the pane widget reads its own from `View.Theme()`.
 - Every cell of a bar has a `tooltip`.
+- A reading on the information row keeps its width while its value changes (`stats.Fixed`).
+- The detail view of the host (`ui/statsbox.go`) is not an overlay: the keys stay with the pane.
+- A pointer move inside one element asks tml for no frame. A move that changes what the element draws sends `frameMsg`.
 - A control tml has is tml's: the menu is its `<Menu>`, and a pane's scrollbar is its `widget.Scrollbar`. A missing one is added there, not built here.
 - A pane's terminal is narrower than the pane by `ui.Gutter`, the column of its scrollbar. The server sets `mux.Config.Gutter`.
 - An element id in `screen.tml` is unique in the frame. A duplicate fails the frame, and that ends the program.

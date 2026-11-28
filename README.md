@@ -46,7 +46,7 @@ The window row is at the top of the screen. It holds the menu, the session, a ta
 - Click a tab to show its window. Turn the wheel over the tabs to go through the windows.
 - Drag a tab to move its window. Click it with the middle button to close it. Click it again to rename it.
 - Right-click a tab, the session or a pane for a menu.
-- Click the working directory to copy it. Click a reading or the clock for its longer form.
+- Click the working directory to copy it. Click the clock for the date. Click a reading of the host for a box of graphs over the window. The box takes no key, and a click on it or on a reading closes it.
 - Drag the line between a pair of panes to resize them. Click a pane to focus it.
 - Drag in a pane to select text. The selection is copied when the button comes up, and the middle button pastes it.
 - The wheel in a pane scrolls its history, and so do page up and page down. A pane with history shows a scrollbar at its right edge: drag the thumb, or click the track.

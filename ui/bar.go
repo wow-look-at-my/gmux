@@ -260,7 +260,7 @@ func (c *Client) Props() tml.Props {
 		// The directory's column takes room ahead of the gap beside it, up to what the directory needs.
 		need := cell.Width(dir) + 2
 		props["infoColumns"] = sema.StringValue("auto,1000*[" + strconv.Itoa(min(need, dirLeast)) + ".." +
-			strconv.Itoa(need) + "],auto,auto,auto,*,auto,auto,auto,auto,auto,auto")
+			strconv.Itoa(need) + "],auto,auto,auto,*,auto,auto,auto,auto,auto")
 		props["command"] = sema.StringValue(p.Command)
 		props["size"] = sema.StringValue(strconv.Itoa(p.Cols) + "×" + strconv.Itoa(p.Rows))
 	}
@@ -268,13 +268,13 @@ func (c *Client) Props() tml.Props {
 		props["note"] = sema.StringValue(c.note)
 	}
 	if c.stats != nil {
-		bar := c.stats.Bar(c.detail)
+		bar := c.stats.Bar()
 		props["cpu"] = sema.StringValue(bar.CPU)
 		props["cpuHistory"] = sema.ListValue(bar.CPUHistory)
 		props["mem"] = sema.StringValue(bar.Mem)
 		props["net"] = sema.StringValue(bar.Net)
-		props["load"] = sema.StringValue(bar.Load)
 		props["gpu"] = sema.StringValue(bar.GPU)
+		c.statsProps(props)
 	}
 	c.overlayProps(props)
 	return props

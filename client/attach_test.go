@@ -150,6 +150,28 @@ func TestATerminalThatGoesAwayStopsCountingForTheSize(t *testing.T) {
 	big.Shows("119×38")
 }
 
+func TestTheMarkOfAMenuFollowsThePointerAtOnce(t *testing.T) {
+	_, socket := serve(t)
+	term := ttytest.Open(t, 80, 24)
+	attach(socket, server.Request{Create: true, Env: env()}, term)
+	term.Shows("≡")
+	x, y := term.Find("≡")
+	term.Click(x, y)
+	term.Shows("Split down")
+
+	// The clock paints a frame each second. A mark that waits for the clock is late on most of these moves.
+	const soon = 250 * time.Millisecond
+	for range 4 {
+		for _, item := range []string{"Split right", "Split down"} {
+			x, y := term.Find(item)
+			plain := term.Style(x, y)
+			term.Move(x, y)
+			require.Eventually(t, func() bool { return term.Style(x, y) != plain }, soon, 5*time.Millisecond,
+				"the mark did not reach %q", item)
+		}
+	}
+}
+
 func TestAttachEndsWhenTheServerCloses(t *testing.T) {
 	srv, socket := serve(t)
 	term := ttytest.Open(t, 80, 20)

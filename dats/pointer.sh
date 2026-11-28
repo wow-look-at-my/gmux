@@ -217,6 +217,29 @@ scrollbar_shows() {
 	[ "$after" -gt 0 ] && echo "after: a thumb at the right edge"
 }
 
+# A click on a reading of the host opens the box of graphs over the window. The pane under the box still gets the
+# keys. A second click closes the box.
+stats_box() {
+	shows outer " CPU " >/dev/null || return 1
+	echo "before: $(gmux pane capture -t outer | grep -c "╭ host")"
+	click 0 "$info_row" "CPU" && shows outer "│ LOAD " |
+		grep -c -e "╭ host" -e "│ CPU .* of [0-9]* cores" -e "│ MEM .* of .*%" -e "│ LOAD " | sed 's/^/box rows: /' || return 1
+	marked typed-under-the-box && echo "keys: the pane" || return 1
+	echo "still open: $(gmux pane capture -t outer | grep -c "╭ host")"
+	click 0 "$info_row" "CPU" && gone outer "╭ host" && echo "closed"
+}
+
+# A reading keeps its cells while its value changes. The graph has its whole width from the first sample on, so
+# the reading after it does not move as samples arrive.
+readings_hold_still() {
+	shows outer " CPU " >/dev/null || return 1
+	row "$info_row" | LC_ALL=C.UTF-8 grep -c -E "CPU .{12} [ 0-9]{3}%  MEM [ .0-9]{3}[BKMGT]/" | sed 's/^/fixed cells: /'
+	first=$(column "$info_row" "MEM") || return 1
+	sleep 2.5
+	second=$(column "$info_row" "MEM") || return 1
+	echo "moved: $((second - first))"
+}
+
 # The information row: the clock shows the date, and the directory copies itself.
 info_row_clicks() {
 	clock=$(row "$info_row" | grep -o '[0-9][0-9]:[0-9][0-9]' | tail -n 1) &&

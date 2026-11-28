@@ -29,7 +29,8 @@ func TestTheScreenIsTheWindowAndTwoBars(t *testing.T) {
 	assert.Contains(t, info, "12%")
 	assert.Contains(t, info, "MEM 3.2G/16G")
 	assert.Contains(t, info, "NET ↓1.2K ↑300B")
-	assert.Contains(t, info, "LOAD 0.52")
+	assert.Contains(t, info, "CPU ▁▃▁  12% ", "a short share keeps the cells of a long one")
+	assert.NotContains(t, info, "LOAD", "the load average is in the detail view only")
 	assert.True(t, strings.HasSuffix(strings.TrimRight(info, " "), "15:04"), info)
 
 	pane := r.mux.ActivePane(r.session).Info()

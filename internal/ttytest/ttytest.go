@@ -127,6 +127,19 @@ func (s *Screen) Click(x, y int) {
 	s.Send("\x1b[<0;" + at + "M\x1b[<0;" + at + "m")
 }
 
+// Move puts the pointer on a cell with no button held, the way a terminal reports it.
+func (s *Screen) Move(x, y int) {
+	s.t.Helper()
+	s.Send("\x1b[<35;" + strconv.Itoa(x+1) + ";" + strconv.Itoa(y+1) + "M")
+}
+
+// Style is how a cell of the screen is drawn.
+func (s *Screen) Style(x, y int) vt.Style {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.Row(y)[x].Style
+}
+
 // Resize changes the terminal's size and tells this process, the way a terminal tells its foreground program.
 func (s *Screen) Resize(cols, rows int) {
 	s.t.Helper()

@@ -20,12 +20,17 @@ const wait = 10 * time.Second
 // fakeStats is a host with a fixed load.
 type fakeStats struct{}
 
-func (fakeStats) Bar(detail bool) stats.Bar {
-	bar := stats.Bar{CPU: "12%", CPUHistory: []string{"5", "40", "12"}, Mem: "3.2G/16G", Net: "↓1.2K ↑300B", Load: "0.52"}
-	if detail {
-		bar.Load = "0.52 0.40 0.31"
+func (fakeStats) Bar() stats.Bar {
+	return stats.Bar{CPU: " 12%", CPUHistory: []string{"5", "40", "12"}, Mem: "3.2G/16G", Net: "↓1.2K ↑300B"}
+}
+
+func (fakeStats) Detail() []stats.Row {
+	return []stats.Row{
+		{Label: "CPU", History: []string{"5", "40", "12"}, Max: 100, Text: " 12% of 16 cores"},
+		{Label: "NET ↓", History: []string{"0", "2048", "1234"}, Text: "1.2K/s"},
+		{Label: "LOAD", History: []string{"0.2", "0.5"}, Text: "0.52 0.40 0.31"},
+		{Label: "UP", Text: "3d 4h"},
 	}
-	return bar
 }
 
 // rig is a client with no terminal: the test hands it messages the way a program would, and reads frames back.

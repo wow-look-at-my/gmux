@@ -82,7 +82,10 @@ func (c *Client) mouse(p *tml.Program, event tml.Mouse) bool {
 	}
 	c.drag = drag{}
 	if c.overlay() != "" {
-		return c.overlayMouse(event)
+		return c.overlayMouse(p, event)
+	}
+	if c.statsOpen && c.hit(event.X, event.Y) == statsID {
+		return c.statsMouse(p, event)
 	}
 	if event.Y < topRows || event.Y >= c.height-bottomRows {
 		return c.barMouse(p, event)
@@ -103,12 +106,16 @@ func inWindow(event tml.Mouse) tml.Mouse {
 }
 
 // overlayMouse leaves a menu or a prompt its own clicks, and closes it on a press anywhere else.
-func (c *Client) overlayMouse(event tml.Mouse) bool {
+func (c *Client) overlayMouse(p *tml.Program, event tml.Mouse) bool {
 	over := c.hit(event.X, event.Y)
 	inside := over == menuID || strings.HasPrefix(over, "prompt") || over == "help-box"
 	if c.menu != nil {
 		// The pointer marks the item it is on, as the keys do.
-		c.menu.hover = c.menuItemAt(event.X, event.Y)
+		if on := c.menuItemAt(event.X, event.Y); on != c.menu.hover {
+			c.menu.hover = on
+			// The menu is one element. The focus ring sees no change in a move inside it, so the frame is asked for here.
+			p.Send(frameMsg{})
+		}
 	}
 	if event.Action == input.Press && (!inside || c.help) {
 		c.closeOverlay()

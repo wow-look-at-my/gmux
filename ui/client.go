@@ -29,7 +29,8 @@ const minFrame = 8 * time.Millisecond
 
 // Stats is where a client reads the host's load from.
 type Stats interface {
-	Bar(detail bool) stats.Bar
+	Bar() stats.Bar
+	Detail() []stats.Row
 }
 
 // Options are what a client is built from.
@@ -85,7 +86,8 @@ type Client struct {
 	note             string
 	// noteUntil is when the note leaves the bar.
 	noteUntil time.Time
-	detail    bool
+	// statsOpen is set while the host's readings show in detail over the window.
+	statsOpen bool
 	longClock bool
 	// clip is the text copied last, which the middle button pastes.
 	clip  string
